@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="/admin/fragments/common :: head">
+</head>
+
+<body>
+	<section id="container">
+		<th:block th:replace="/admin/fragments/common :: header"></th:block>
+		<section id="main-content">
+			<section class="wrapper">
+				<div class="row mt">
+					<div class="col-md-12">
+						<div class="content-panel">
+							<table class="table table-striped table-advance table-hover">
+								<h4>
+									<i class="fa fa-angle-right"></i> 고객관리
+								</h4>
+								<hr>
+								<thead>
+									<tr>
+										<th><i class="fa fa-bullhorn"></i> 번호</th>
+										<th class="hidden-phone"><i class="fa fa-question-circle"></i>
+											이름</th>
+										<th><i class="fa fa-bookmark"></i> 카테고리</th>
+										<th><i class=" fa fa-edit"></i> Status</th>
+										<th>비고</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td class="hidden-phone">Company Ltd</td>
+										<td><a href="basic_table.html#">Lorem Ipsum dolor</a></td>
+										<td>12000.00$</td>
+										<td><span class="label label-info label-mini">Due</span></td>
+										<td>
+											<button class="btn btn-primary btn-xs">
+												<i class="fa fa-pencil"></i>
+											</button>
+											<button class="btn btn-danger btn-xs">
+												<i class="fa fa-trash-o "></i>
+											</button>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</section>
+		</section>
+	</section>
+	<th:block th:replace="/admin/fragments/common :: script"></th:block>
+</body>
+
+</html>

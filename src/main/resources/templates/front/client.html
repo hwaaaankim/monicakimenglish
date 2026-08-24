@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="/front/fragments/common :: head('고객센터')">
+
+</head>
+
+<body class="stretched">
+    <div id="wrapper" class="clearfix">
+
+        <th:block th:replace="/front/fragments/common :: header"></th:block>
+
+        <section id="page-title">
+
+            <div class="container clearfix">
+                <h1>Client Center</h1>
+                <span>자주 묻는 질문들 입니다.</span>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Client Center</li>
+                </ol>
+            </div>
+
+        </section>
+
+        <section id="content">
+            <div class="content-wrap">
+                <div class="container clearfix">
+
+                    <div class="row gutter-40 col-mb-80">
+                        <div class="postcontent col-lg-12">
+
+                            <div class="grid-filter-wrap">
+                                <ul class="grid-filter style-4 customjs">
+
+                                    <li class="activeFilter"><a href="#" data-filter="all">All</a></li>
+                                    <li><a href="#" data-filter=".faq-class">수업관련</a></li>
+                                    <li><a href="#" data-filter=".faq-member">강사&코치</a></li>
+                                    <li><a href="#" data-filter=".faq-books">교재관련</a></li>
+
+                                </ul>
+                            </div>
+
+                            <div class="clear"></div>
+
+                            <div id="faqs" class="faqs">
+
+                                <div class="toggle faq faq-class">
+                                    <div class="toggle-header">
+                                        <div class="toggle-icon">
+                                            <i class="toggle-closed icon-question-sign"></i>
+                                            <i class="toggle-open icon-question-sign"></i>
+                                        </div>
+                                        <div class="toggle-title">
+                                            수업은 어떻게 진행되나요?
+                                        </div>
+                                    </div>
+                                    <div class="toggle-content">수업 일정에 맞춰 신청주시면 실제 대면강의로 진행됩니다.
+                                    </div>
+                                </div>
+
+                                <div class="toggle faq faq-class">
+                                    <div class="toggle-header">
+                                        <div class="toggle-icon">
+                                            <i class="toggle-closed icon-question-sign"></i>
+                                            <i class="toggle-open icon-question-sign"></i>
+                                        </div>
+                                        <div class="toggle-title">
+                                            온라인 강의는 없는건가요?
+                                        </div>
+                                    </div>
+                                    <div class="toggle-content">현재 유튜브채널을 통해 간단한 미니 강의 형태로 진행하고 있으며, 내년초를 목표로
+                                        온라인 강의 플랫폼을 개발중에 있습니다.
+                                    </div>
+                                </div>
+                                <div class="toggle faq faq-class">
+                                    <div class="toggle-header">
+                                        <div class="toggle-icon">
+                                            <i class="toggle-closed icon-question-sign"></i>
+                                            <i class="toggle-open icon-question-sign"></i>
+                                        </div>
+                                        <div class="toggle-title">
+                                            수업 신청은 어떻게 하나요?
+                                        </div>
+                                    </div>
+                                    <div class="toggle-content">유튜브 채널 혹은 이메일/연락처로 연락주세요^^
+                                    </div>
+                                </div>
+                                <div class="toggle faq faq-class">
+                                    <div class="toggle-header">
+                                        <div class="toggle-icon">
+                                            <i class="toggle-closed icon-question-sign"></i>
+                                            <i class="toggle-open icon-question-sign"></i>
+                                        </div>
+                                        <div class="toggle-title">
+                                            수업 일정은 어떻게 알 수 있나요?
+                                        </div>
+                                    </div>
+                                    <div class="toggle-content">보통 일주일에 1~2회 수업으로 일정표가 있고 이는 유튜브를 통해서 확인이 가능합니다.
+                                    </div>
+                                </div>
+                                <div class="toggle faq faq-class">
+                                    <div class="toggle-header">
+                                        <div class="toggle-icon">
+                                            <i class="toggle-closed icon-question-sign"></i>
+                                            <i class="toggle-open icon-question-sign"></i>
+                                        </div>
+                                        <div class="toggle-title">
+                                            수업은 어떻게 구성되나요?
+                                        </div>
+                                    </div>
+                                    <div class="toggle-content">총 10회의 강의로 구성되어 있으며, 1주일에 1~2회 강의씩 진행됩니다. 오전 9~10시부터 저녁
+                                        5~6시까지
+                                        강의가 진행됩니다.
+                                    </div>
+                                </div>
+                                <div class="toggle faq faq-class">
+                                    <div class="toggle-header">
+                                        <div class="toggle-icon">
+                                            <i class="toggle-closed icon-question-sign"></i>
+                                            <i class="toggle-open icon-question-sign"></i>
+                                        </div>
+                                        <div class="toggle-title">
+                                            중식은 어떻게 되나요?
+                                        </div>
+                                    </div>
+                                    <div class="toggle-content">중식은 제공해 드리고 있습니다.
+                                    </div>
+                                </div>
+                                <div class="toggle faq faq-books">
+                                    <div class="toggle-header">
+                                        <div class="toggle-icon">
+                                            <i class="toggle-closed icon-question-sign"></i>
+                                            <i class="toggle-open icon-question-sign"></i>
+                                        </div>
+                                        <div class="toggle-title">
+                                            교재는 제공해 주시나요?
+                                        </div>
+                                    </div>
+                                    <div class="toggle-content">교재는 별도로 구입 하셔야 합니다.
+                                    </div>
+                                </div>
+                                <div class="toggle faq faq-books">
+                                    <div class="toggle-header">
+                                        <div class="toggle-icon">
+                                            <i class="toggle-closed icon-question-sign"></i>
+                                            <i class="toggle-open icon-question-sign"></i>
+                                        </div>
+                                        <div class="toggle-title">
+                                            실습자료는 제공 되나요?
+                                        </div>
+                                    </div>
+                                    <div class="toggle-content">교재 외의 실습 자료는 제공됩니다.
+                                    </div>
+                                </div>
+                                <div class="toggle faq faq-books">
+                                    <div class="toggle-header">
+                                        <div class="toggle-icon">
+                                            <i class="toggle-closed icon-question-sign"></i>
+                                            <i class="toggle-open icon-question-sign"></i>
+                                        </div>
+                                        <div class="toggle-title">
+                                            교재만 구입할 수 있나요?
+                                        </div>
+                                    </div>
+                                    <div class="toggle-content">교재만 구입도 가능합니다.
+                                    </div>
+                                </div>
+                                <div class="toggle faq faq-books">
+                                    <div class="toggle-header">
+                                        <div class="toggle-icon">
+                                            <i class="toggle-closed icon-question-sign"></i>
+                                            <i class="toggle-open icon-question-sign"></i>
+                                        </div>
+                                        <div class="toggle-title">
+                                            교재는 어떻게 주문하나요?
+                                        </div>
+                                    </div>
+                                    <div class="toggle-content">현재 주문이 많이 밀려있어 유튜브 채널 혹은 연락처로 문의 주시면 순차적으로 주문-배송 해드립니다.
+                                    </div>
+                                </div>
+                                <div class="toggle faq faq-books">
+                                    <div class="toggle-header">
+                                        <div class="toggle-icon">
+                                            <i class="toggle-closed icon-question-sign"></i>
+                                            <i class="toggle-open icon-question-sign"></i>
+                                        </div>
+                                        <div class="toggle-title">
+                                            교재는 어떻게 구성되어있나요?
+                                        </div>
+                                    </div>
+                                    <div class="toggle-content">총 6권(1권, 2권, 3-1권, 3-2권, 4권, 5권, 6원)으로 구성되어있으며, 점차적으로
+                                        심화과정을 담고 있습니다.
+                                    </div>
+                                </div>
+                                <div class="toggle faq faq-books">
+                                    <div class="toggle-header">
+                                        <div class="toggle-icon">
+                                            <i class="toggle-closed icon-question-sign"></i>
+                                            <i class="toggle-open icon-question-sign"></i>
+                                        </div>
+                                        <div class="toggle-title">
+                                            교재가 없어도 수업을 참여할 수 있나요?
+                                        </div>
+                                    </div>
+                                    <div class="toggle-content">교재가 없어도 수업을 들을 수 있으나 최적의 효율을 내기 위해서, 또한 모니카김 영어스타일은 기술에
+                                        기반을
+                                        두고 있기때문에 교재가 있으셔야 빠르게 배우실 수 있습니다.
+                                    </div>
+                                </div>
+                                <div class="toggle faq faq-member">
+                                    <div class="toggle-header">
+                                        <div class="toggle-icon">
+                                            <i class="toggle-closed icon-question-sign"></i>
+                                            <i class="toggle-open icon-question-sign"></i>
+                                        </div>
+                                        <div class="toggle-title">
+                                            강사분들은 어떤 역할을 하시나요?
+                                        </div>
+                                    </div>
+                                    <div class="toggle-content">모니카김 영어 스타일에 기반된 수업을 진행합니다.
+                                    </div>
+                                </div>
+                                <div class="toggle faq faq-member">
+                                    <div class="toggle-header">
+                                        <div class="toggle-icon">
+                                            <i class="toggle-closed icon-question-sign"></i>
+                                            <i class="toggle-open icon-question-sign"></i>
+                                        </div>
+                                        <div class="toggle-title">
+                                            원장님께 강의를 듣고싶으면 어떻게 해야하나요?
+                                        </div>
+                                    </div>
+                                    <div class="toggle-content">유튜브 혹은 연락처로 문의주시면 알 수 있습니다. 원장님이 진행하시는 수업장소로 참여가 가능하시면
+                                        원장님께 수업을 받을 수 있으나, 강사님들도 훌륭한 교육을 받으셨기 때문에 걱정 하지 않으셔도 괜찮습니다.
+                                    </div>
+                                </div>
+                                <div class="toggle faq faq-member">
+                                    <div class="toggle-header">
+                                        <div class="toggle-icon">
+                                            <i class="toggle-closed icon-question-sign"></i>
+                                            <i class="toggle-open icon-question-sign"></i>
+                                        </div>
+                                        <div class="toggle-title">
+                                            코치님들은 어떤 역할을 하시나요?
+                                        </div>
+                                    </div>
+                                    <div class="toggle-content">모니카김 스타일은 기술에 기반을 둔 학습법이기 때문에 수업시간에 실제로 기술을 응용해서 다양한 실습을
+                                        진행하게됩니다. 이때 옆에서 정확하게 적용하시는지 지도해 주십니다.
+                                    </div>
+                                </div>
+                                <div class="toggle faq faq-member">
+                                    <div class="toggle-header">
+                                        <div class="toggle-icon">
+                                            <i class="toggle-closed icon-question-sign"></i>
+                                            <i class="toggle-open icon-question-sign"></i>
+                                        </div>
+                                        <div class="toggle-title">
+                                            강사가 되고싶으면 어떻게 해야하나요?
+                                        </div>
+                                    </div>
+                                    <div class="toggle-content">자세한 내용은 'RECRUIT' 페이지를 참고 부탁드리며, 기본적으로 140hr + 20hr 의
+                                        교육을 이수 하신 후 시범강의를 통해서
+                                        강의 역량을 향상시킨 후 강사가 될 수 있습니다. 자세한 내용은 연락처로 문의 부탁드립니다.
+                                    </div>
+                                </div>
+                                <div class="toggle faq faq-member">
+                                    <div class="toggle-header">
+                                        <div class="toggle-icon">
+                                            <i class="toggle-closed icon-question-sign"></i>
+                                            <i class="toggle-open icon-question-sign"></i>
+                                        </div>
+                                        <div class="toggle-title">
+                                            코치가 되고싶으면 어떻게 해야하나요?
+                                        </div>
+                                    </div>
+                                    <div class="toggle-content">자세한 내용은 'RECRUIT' 페이지를 참고 부탁드리며, 기본적으로 140hr + 10hr 의
+                                        교육을 이수 하신 후 시범강의를 통해서
+                                        강의 역량을 향상시킨 후 코치가 될 수 있습니다. 자세한 내용은 연락처로 문의 부탁드립니다.
+                                    </div>
+                                </div>
+                                <div class="toggle faq faq-member">
+                                    <div class="toggle-header">
+                                        <div class="toggle-icon">
+                                            <i class="toggle-closed icon-question-sign"></i>
+                                            <i class="toggle-open icon-question-sign"></i>
+                                        </div>
+                                        <div class="toggle-title">
+                                            강사/코치님들에 대한 정보는 어디서 볼 수 있나요?
+                                        </div>
+                                    </div>
+                                    <div class="toggle-content">현재 강사 및 수업에 대한 본 사이트를 개발중에 있습니다. 곧 확인하실 수 있으며, 별도로 궁금하신
+                                        사항이 있으신 경우
+                                        연락처로 문의 부탁드립니다.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <th:block th:replace="/front/fragments/common :: footer"></th:block>
+
+    </div>
+
+
+   <th:block th:replace="/front/fragments/common :: script"></th:block>
+    <script>
+        jQuery(document).ready(function ($) {
+            var $faqItems = $('#faqs .faq');
+            if (window.location.hash != '') {
+                var getFaqFilterHash = window.location.hash;
+                var hashFaqFilter = getFaqFilterHash.split('#');
+                if ($faqItems.hasClass(hashFaqFilter[1])) {
+                    $('.grid-filter li').removeClass('activeFilter');
+                    $('[data-filter=".' + hashFaqFilter[1] + '"]').parent('li').addClass('activeFilter');
+                    var hashFaqSelector = '.' + hashFaqFilter[1];
+                    $faqItems.css('display', 'none');
+                    if (hashFaqSelector != 'all') {
+                        $(hashFaqSelector).fadeIn(500);
+                    } else {
+                        $faqItems.fadeIn(500);
+                    }
+                }
+            }
+
+            $('.grid-filter a').on('click', function () {
+                $('.grid-filter li').removeClass('activeFilter');
+                $(this).parent('li').addClass('activeFilter');
+                var faqSelector = $(this).attr('data-filter');
+                $faqItems.css('display', 'none');
+                if (faqSelector != 'all') {
+                    $(faqSelector).fadeIn(500);
+                } else {
+                    $faqItems.fadeIn(500);
+                }
+                return false;
+            });
+        });
+    </script>
+
+</body>
+
+</html>

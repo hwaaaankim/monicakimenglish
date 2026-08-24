@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!--
+        Eclipse 콘솔과 운영 파일 로그에서 완전히 동일하게 사용할 로그 형식
+
+        예:
+        12:45:31.234 [http-nio-8080-exec-1] INFO  c.d.m.SomeController - message
+    -->
+    <property name="LOG_PATTERN"
+              value="%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n%ex"/>
+
+
+    <!-- ========================================================= -->
+    <!-- 콘솔 출력 -->
+    <!-- test / prod 모두 사용 -->
+    <!-- ========================================================= -->
+    <appender name="CONSOLE"
+              class="ch.qos.logback.core.ConsoleAppender">
+
+        <encoder>
+            <charset>UTF-8</charset>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+
+    </appender>
+
+
+    <!-- ========================================================= -->
+    <!-- 운영 서버 전용 날짜별 파일 로그 -->
+    <!-- ========================================================= -->
+    <springProfile name="prod">
+
+        <appender name="DAILY_FILE"
+                  class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+
+                <!--
+                    실제 로그 파일 예:
+                    /var/log/monicakimenglish/monicakimenglish-2026-08-24.log
+                    /var/log/monicakimenglish/monicakimenglish-2026-08-25.log
+                -->
+                <fileNamePattern>
+                    /var/log/monicakimenglish/monicakimenglish-%d{yyyy-MM-dd}.log
+                </fileNamePattern>
+
+                <!-- 30일 보관 -->
+                <maxHistory>30</maxHistory>
+
+                <!-- 로그 전체 최대 5GB -->
+                <totalSizeCap>5GB</totalSizeCap>
+
+                <!-- 시작 시 오래된 로그 정리 -->
+                <cleanHistoryOnStart>true</cleanHistoryOnStart>
+
+            </rollingPolicy>
+
+            <encoder>
+                <charset>UTF-8</charset>
+
+                <!-- Eclipse 콘솔과 정확히 동일한 패턴 사용 -->
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+
+        </appender>
+
+    </springProfile>
+
+
+    <!-- ========================================================= -->
+    <!-- 개발환경 TEST -->
+    <!-- 파일 저장 X -->
+    <!-- Eclipse 콘솔 출력만 -->
+    <!-- ========================================================= -->
+    <springProfile name="test">
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+
+    </springProfile>
+
+
+    <!-- ========================================================= -->
+    <!-- 운영환경 PROD -->
+    <!-- 콘솔 + 날짜별 파일 -->
+    <!-- ========================================================= -->
+    <springProfile name="prod">
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="DAILY_FILE"/>
+        </root>
+
+    </springProfile>
+
+
+    <!--
+        test/prod 외 프로필로 실행했을 경우에도
+        최소한 콘솔은 출력되도록 처리
+    -->
+    <springProfile name="!test &amp; !prod">
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+
+    </springProfile>
+
+</configuration>

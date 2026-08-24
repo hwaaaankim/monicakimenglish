@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="/admin/fragments/common :: head">
+</head>
+
+<body>
+	<div id="login-page">
+		<div class="container">
+			<form class="form-login" action="index.html">
+				<h2 class="form-login-heading">로그인하세요</h2>
+				<div class="login-wrap">
+					<input type="text" class="form-control" placeholder="User ID"
+						autofocus> <br> <input type="password" class="form-control" placeholder="Password">
+					<button class="btn btn-theme btn-block" style="margin-top:20px;"
+						type="submit">
+						<i class="fa fa-lock"></i> SIGN IN
+					</button>
+					<hr>
+				</div>
+			</form>
+		</div>
+	</div>
+	<th:block th:replace="/admin/fragments/common :: script"></th:block>
+	<script>
+    $.backstretch("/admin/img/login-bg.jpg", {
+      speed: 500
+    });
+  </script>
+</body>
+
+</html>

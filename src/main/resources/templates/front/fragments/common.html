@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head th:fragment="head(title)">
+
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta name="author" content="ATTRACTION" />
+<link
+	href="https://fonts.googleapis.com/css?family=Lato:300,400,400i,700|Poppins:300,400,500,600,700|PT+Serif:400,400i&display=swap"
+	rel="stylesheet" type="text/css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link
+	href="https://fonts.googleapis.com/css2?family=Bangers&family=Creepster&family=Noto+Sans+KR:wght@100;300;400;500;700;900&family=Single+Day&display=swap"
+	rel="stylesheet">
+<link rel="stylesheet" href="/front/css/bootstrap.css" type="text/css" />
+<link rel="stylesheet" href="/front/style.css" type="text/css" />
+<link rel="stylesheet" href="/front/css/dark.css" type="text/css" />
+<link rel="stylesheet" href="/front/css/font-icons.css" type="text/css" />
+<link rel="stylesheet" href="/front/css/animate.css" type="text/css" />
+<link rel="stylesheet" href="/front/css/magnific-popup.css" type="text/css" />
+
+<link rel="stylesheet" href="/front/css/custom.css" type="text/css" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<link rel="stylesheet" type="text/css"
+	href="/front/include/rs-plugin/css/settings.css" media="screen" />
+<link rel="stylesheet" type="text/css"
+	href="/front/include/rs-plugin/css/layers.css">
+<link rel="stylesheet" type="text/css"
+	href="/front/include/rs-plugin/css/navigation.css">
+<link rel="stylesheet"
+	href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css" />
+<link rel="stylesheet" href="/front/detail.css">
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<title th:text="${title}">MonicaKim English</title>
+
+
+</head>
+
+<body class="stretched">
+
+	<div id="wrapper" class="clearfix">
+		<th:block th:fragment="header">
+			<header id="header" class="full-header transparent-header"
+				data-sticky-class="not-dark">
+				<div id="header-wrap">
+					<div class="container">
+						<div class="header-row">
+							<div id="logo">
+								<a href="/index" class="standard-logo"
+									data-dark-logo="/image/logo-dark.png"><img
+									src="/front/image/logo.png" alt="Logo"></a> 
+								<a href="/index"
+									class="retina-logo" data-dark-logo="/image/logo-dark@2x.png">
+									<img src="/front/image/logo@2x.png" alt="Logo"></a>
+							</div>
+
+							<div id="primary-menu-trigger">
+								<svg class="svg-trigger" viewBox="0 0 100 100">
+                                <path
+										d="m 30,33 h 40 c 3.722839,0 7.5,3.126468 7.5,8.578427 0,5.451959 -2.727029,8.421573 -7.5,8.421573 h -20">
+                                </path>
+                                <path d="m 30,50 h 40"></path>
+                                <path
+										d="m 70,67 h -40 c 0,0 -7.5,-0.802118 -7.5,-8.365747 0,-7.563629 7.5,-8.634253 7.5,-8.634253 h 20">
+                                </path>
+                            </svg>
+							</div>
+							<nav class="primary-menu">
+								<ul class="menu-container">
+									<li class="menu-item"><a class="menu-link" href="/index">
+											<div>Monica Kim</div>
+									</a>
+										<ul class="sub-menu-container">
+
+										</ul></li>
+									<li class="menu-item"><a class="menu-link" href="/program">
+											<div>Programs</div>
+									</a>
+										<ul class="sub-menu-container">
+
+										</ul></li>
+									<li class="menu-item"><a class="menu-link" href="/member">
+											<div>Members</div>
+									</a>
+										<ul class="sub-menu-container">
+
+										</ul></li>
+									<li class="menu-item"><a class="menu-link" href="/recruit">
+											<div>Recruit</div>
+									</a>
+										<ul class="sub-menu-container">
+
+										</ul></li>
+									<li class="menu-item"><a class="menu-link" href="/client">
+											<div>Client Center</div>
+									</a>
+										<ul class="sub-menu-container">
+
+										</ul></li>
+									<li class="menu-item"><a class="menu-link" href="/contact">
+											<div>Contact Us</div>
+									</a>
+										<ul class="sub-menu-container">
+
+										</ul></li>
+								</ul>
+							</nav>
+						</div>
+					</div>
+				</div>
+				<div class="header-wrap-clone"></div>
+			</header>
+		</th:block>
+		
+		<th:block th:fragment="footer">
+			<footer id="footer" class="dark">
+				<div id="copyrights">
+					<div class="container">
+
+						<div class="row col-mb-30">
+
+							<div class="col-md-6 text-center text-md-start">
+								Copyrights &copy; 2022 All Rights Reserved by ATRT.<br>
+								<div class="copyright-links">
+									<a href="javascript:void(0)">Terms of Use</a> / <a
+										href="javascript:void(0)">Privacy Policy</a>
+								</div>
+							</div>
+
+							<div class="col-md-6 text-center text-md-end">
+								<div
+									class="d-flex justify-content-center justify-content-md-end">
+									<a href="#"
+										class="social-icon si-small si-borderless si-facebook"> <i
+										class="icon-facebook"></i> <i class="icon-facebook"></i>
+									</a> <a href="#"
+										class="social-icon si-small si-borderless si-facebook"> <i
+										class="icon-instagram"></i> <i class="icon-instagram"></i>
+									</a>
+
+								</div>
+
+								<div class="clear"></div>
+
+								<i class="icon-envelope2"></i> koolkools0824@naver.com<span
+									class="middot">&middot;</span> <i class="icon-headphones"></i>
+								02-558-8626<span class="middot">&middot;</span> <i
+									class="icon-headphones"></i> a010-3399-8626
+							</div>
+						</div>
+					</div>
+				</div>
+			</footer>
+		</th:block>
+	</div>
+	<th:block th:fragment="script">
+		<div id="gotoTop" class="icon-angle-up"></div>
+		<script src="/front/js/jquery.js"></script>
+		<script src="/front/js/plugins.min.js"></script>
+		<script src="/front/js/functions.js"></script>
+		<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+		<script src="/front/include/rs-plugin/js/jquery.themepunch.tools.min.js"></script>
+		<script src="/front/include/rs-plugin/js/jquery.themepunch.revolution.min.js"></script>
+		<script
+			src="/front/include/rs-plugin/js/extensions/revolution.extension.video.min.js"></script>
+		<script
+			src="/front/include/rs-plugin/js/extensions/revolution.extension.slideanims.min.js"></script>
+		<script
+			src="/front/include/rs-plugin/js/extensions/revolution.extension.actions.min.js"></script>
+		<script
+			src="/front/include/rs-plugin/js/extensions/revolution.extension.layeranimation.min.js"></script>
+		<script
+			src="/front/include/rs-plugin/js/extensions/revolution.extension.kenburn.min.js"></script>
+		<script
+			src="/front/include/rs-plugin/js/extensions/revolution.extension.navigation.min.js"></script>
+		<script
+			src="/front/include/rs-plugin/js/extensions/revolution.extension.migration.min.js"></script>
+		<script
+			src="/front/include/rs-plugin/js/extensions/revolution.extension.parallax.min.js"></script>
+
+		<script>
+
+	        var tpj = jQuery;
+	        var revapi202;
+	        var $ = jQuery.noConflict();
+	
+	        tpj(document).ready(function () {
+	            if (tpj("#rev_slider_579_1").revolution == undefined) {
+	                revslider_showDoubleJqueryError("#rev_slider_579_1");
+	            } else {
+	                revapi202 = tpj("#rev_slider_579_1").show().revolution({
+	                    sliderType: "standard",
+	                    jsFileLocation: "include/rs-plugin/js/",
+	                    sliderLayout: "fullscreen",
+	                    dottedOverlay: "none",
+	                    delay: 3000,
+	                    responsiveLevels: [1140, 1024, 778, 480],
+	                    visibilityLevels: [1140, 1024, 778, 480],
+	                    gridwidth: [1140, 1024, 778, 480],
+	                    gridheight: [728, 768, 960, 720],
+	                    lazyType: "none",
+	                    shadow: 0,
+	                    spinner: "off",
+	                    stopLoop: "off",
+	                    stopAfterLoops: -1,
+	                    stopAtSlide: -1,
+	                    shuffle: "off",
+	                    autoHeight: "on",
+	                    fullScreenAutoWidth: "on",
+	                    fullScreenAlignForce: "off",
+	                    fullScreenOffsetContainer: "",
+	                    fullScreenOffset: "",
+	                    disableProgressBar: "off",
+	                    hideThumbsOnMobile: "off",
+	                    hideSliderAtLimit: 0,
+	                    hideCaptionAtLimit: 0,
+	                    hideAllCaptionAtLilmit: 0,
+	            	     debugMode: false,
+	                    fallbacks: {
+	                        simplifyAll: "off",
+	                        disableFocusListener: false,
+	                    },
+	                    parallax: {
+	                        type: "mouse",
+	                        origo: "slidercenter",
+	                        speed: 300,
+	                        levels: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 49, 50, 51, 55],
+	                    },
+	
+	                });
+	                revapi202.on("revolution.slide.onloaded", function (e) {
+	                    setTimeout(function () { SEMICOLON.slider.sliderDimensions(); }, 200);
+	                });
+	
+	                revapi202.on("revolution.slide.onchange", function (e, data) {
+	                    SEMICOLON.slider.revolutionSliderMenu();
+	            });
+	            }
+	        });
+	
+	    </script>
+
+		<script src="/front/gsap.min.js" type="text/javascript"></script>
+		<script src="/front/ScrollTrigger.min.js"></script>
+		<script src="/front/custom.js"></script>
+		<script>
+
+        jQuery(window).on('load', function () {
+
+            let $container = $('#posts');
+
+            function blogTimelineEntries() {
+                $('.post-timeline').find('.entry:not(.entry-date-section)').each(function () {
+                    let position = $(this).position();
+                    if (position.left === 0) {
+                        $(this).removeClass('alt');
+                    } else {
+                        $(this).addClass('alt');
+                    }
+                    $(this).find('.entry-timeline').fadeIn();
+                });
+
+                $('.entry.entry-date-section').next().next().find('.entry-timeline').css({ 'top': '70px' });
+            }
+
+            $container.on('layoutComplete', function () {
+                blogTimelineEntries();
+            });
+
+            $(window).resize(function () {
+                $container.isotope('layout');
+                setTimeout(function () {
+                    blogTimelineEntries();
+                }, 2500);
+            });
+
+        });
+
+    </script>
+		<script
+			src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
+		<script>
+        AOS.init();
+    </script>
+	</th:block>
+</body>
+
+</html>

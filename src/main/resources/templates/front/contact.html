@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="/front/fragments/common :: head('홈')">
+
+</head>
+
+<body class="stretched">
+    <div id="wrapper" class="clearfix">
+        <th:block th:replace="/front/fragments/common :: header"></th:block>
+
+        <section id="page-title">
+
+            <div class="container clearfix">
+                <h1>Contact</h1>
+                <span>궁금한 점은 언제든 문의주세요.</span>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/index">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Contact</li>
+                </ol>
+            </div>
+
+        </section>
+
+        <section id="content">
+            <div class="content-wrap">
+                <div class="container clearfix">
+
+                    <div class="row align-items-stretch col-mb-50 mb-0">
+                        <div class="col-lg-6">
+
+                            <div class="fancy-title title-border">
+                                <h3>모니카김 문의하기</h3>
+                            </div>
+
+                            <form class="mb-0" action="/clientInsert" method="post">
+                                <div class="row">
+                                    <div class="col-md-6 form-group">
+                                        <label for="template-contactform-name">Name <small>*</small></label>
+                                        <input type="text" name="#" class="sm-form-control" />
+                                    </div>
+
+                                    <div class="col-md-6 form-group">
+                                        <label for="template-contactform-phone">Phone</label>
+                                        <input type="text" name="" class="sm-form-control" />
+                                    </div>
+
+                                    <div class="w-100"></div>
+                                    <div class="col-md-8 form-group">
+                                        <label for="template-contactform-email">Email <small>*</small></label>
+                                        <input type="text" name="" class="sm-form-control" />
+                                    </div>
+
+                                    <div class="col-md-4 form-group">
+                                        <label for="template-contactform-service">Subject</label>
+                                        <select name="" class="sm-form-control">
+                                            <option value="">-- Select One --</option>
+                                            <option value="book">교재문의</option>
+                                            <option value="class">수업문의</option>
+                                            <option value="vision">강사 / 코치지원</option>
+                                            <option value="etc">기타</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="w-100"></div>
+
+                                    <div class="col-12 form-group">
+                                        <label for="template-contactform-message">Message <small>*</small></label>
+                                        <textarea class="required sm-form-control" name="" rows="6" cols="30"></textarea>
+                                    </div>
+
+                                    <div class="col-12 form-group">
+                                        <input type="submit" tabindex="5" value="Submit" class="button button-3d m-0">
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="col-lg-6 min-vh-50">
+                            <iframe
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d25325.347013429502!2d127.01186187073287!3d37.4921513587876!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x357ca14fff41b4fd%3A0x635925a3c8d81c15!2z7ISc7Jq47Yq567OE7IucIOyEnOy0iOq1rCDqsJXrgqjrjIDroZw!5e0!3m2!1sko!2skr!4v1661059012974!5m2!1sko!2skr"
+                                width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"
+                                referrerpolicy="no-referrer-when-downgrade"></iframe>
+                        </div>
+                    </div>
+
+                    <div class="row col-mb-50">
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="feature-box fbox-center fbox-bg fbox-plain">
+                                <div class="fbox-icon">
+                                    <a href="#"><i class="icon-map-marker2"></i></a>
+                                </div>
+                                <div class="fbox-content">
+                                    <h3>Our Headquarters<span class="subtitle">Melbourne, Australia</span></h3>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="feature-box fbox-center fbox-bg fbox-plain">
+                                <div class="fbox-icon">
+                                    <a href="#"><i class="icon-phone3"></i></a>
+                                </div>
+                                <div class="fbox-content">
+                                    <h3>Speak to Us<span class="subtitle">(123) 456 7890</span></h3>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="feature-box fbox-center fbox-bg fbox-plain">
+                                <div class="fbox-icon">
+                                    <a href="#"><i class="icon-skype2"></i></a>
+                                </div>
+                                <div class="fbox-content">
+                                    <h3>Make a Video Call<span class="subtitle">CanvasOnSkype</span></h3>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="feature-box fbox-center fbox-bg fbox-plain">
+                                <div class="fbox-icon">
+                                    <a href="#"><i class="icon-twitter2"></i></a>
+                                </div>
+                                <div class="fbox-content">
+                                    <h3>Follow on Twitter<span class="subtitle">2.3M Followers</span></h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+       <th:block th:replace="/front/fragments/common :: footer"></th:block>
+    </div>
+    <th:block th:replace="/front/fragments/common :: script"></th:block>
+
+</body>
+
+</html>

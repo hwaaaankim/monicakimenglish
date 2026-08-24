@@ -1,0 +1,116 @@
+spring:
+  application:
+    name: MonicaKimEnglish
+
+  profiles:
+    active: test
+
+server:
+  forward-headers-strategy: framework
+  port: 8080
+
+  servlet:
+    session:
+      timeout: 43200m       # 30일 = 1440m * 30
+      cookie:
+        max-age: 2592000    # 30일 = 60 * 60 * 24 * 30
+        name: SID
+        http-only: true
+
+
+# =========================================================
+# 개발 환경
+# Eclipse 실행 프로필: test
+# =========================================================
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: jdbc:mariadb://172.237.20.253:3306/monicakimenglish?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Seoul
+    username: root
+    password: ghksrka3849!
+
+    hikari:
+      connectionTimeout: 30000
+      maximumPoolSize: 10
+      maxLifetime: 1800000
+      poolName: HikariCP
+      readOnly: false
+      connectionTestQuery: SELECT 1
+
+  h2:
+    console:
+      enabled: true
+
+  jpa:
+    database-platform: org.hibernate.dialect.MariaDBDialect
+
+  servlet:
+    multipart:
+      location: D:/MonicaKimEnglish/tmp/
+      max-file-size: 5000MB
+      max-request-size: -1
+
+  upload:
+    path: D:/MonicaKimEnglish/files/
+    env: local
+
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false
+
+
+# =========================================================
+# 배포 환경
+# Ubuntu / Nginx / HTTPS
+# =========================================================
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: jdbc:mariadb://127.0.0.1:3306/monicakimenglish?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Seoul
+    username: root
+    password: ghksrka3849!
+
+    hikari:
+      connectionTimeout: 30000
+      maximumPoolSize: 10
+      maxLifetime: 1800000
+      poolName: HikariCP
+      readOnly: false
+      connectionTestQuery: SELECT 1
+
+  h2:
+    console:
+      enabled: true
+
+  jpa:
+    database-platform: org.hibernate.dialect.MariaDBDialect
+
+  servlet:
+    multipart:
+      location: /var/lib/monicakimenglish/tmp/
+      max-file-size: 5000MB
+      max-request-size: -1
+
+  upload:
+    path: /var/lib/monicakimenglish/files/
+    env: prod
+
+server:
+  address: 127.0.0.1
+
+  servlet:
+    session:
+      cookie:
+        secure: true
