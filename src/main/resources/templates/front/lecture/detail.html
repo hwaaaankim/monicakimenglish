@@ -1,41 +1,93 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
 <head th:replace="~{front/fragments/common :: head(${lecture.title})}"></head>
+
 <body class="stretched mk-platform-page">
-<div id="wrapper" class="clearfix">
-<th:block th:replace="~{front/fragments/common :: header}"></th:block>
-<main class="mk-detail-page"><div class="container">
-  <div class="row g-4">
-    <div class="col-12 col-lg-7">
-      <div class="mk-detail-gallery">
-        <div class="mk-gallery-main" th:if="${!#lists.isEmpty(images)}"><img id="mainIntroImage" th:src="@{/media/lectures/{lid}/images/{iid}(lid=${lecture.id},iid=${images[0].id})}" alt="강의 소개"></div>
-        <div class="mk-gallery-main mk-thumb-placeholder" th:if="${#lists.isEmpty(images)}"><span>MONICA KIM ONLINE CLASS</span></div>
-        <div class="mk-gallery-thumbs" th:if="${images.size() > 1}"><button th:each="img:${images}" type="button" class="js-gallery-thumb" th:attr="data-src=@{/media/lectures/{lid}/images/{iid}(lid=${lecture.id},iid=${img.id})}"><img th:src="@{/media/lectures/{lid}/images/{iid}(lid=${lecture.id},iid=${img.id})}" alt="소개 이미지"></button></div>
-      </div>
-    </div>
-    <div class="col-12 col-lg-5">
-      <div class="mk-purchase-panel">
-        <div class="mk-tags"><span th:each="tag:${tags}" th:text="${'#' + tag}">#영어</span></div>
-        <h1 th:text="${lecture.title}">강의 제목</h1>
-        <p class="mk-detail-intro" th:text="${lecture.description}">설명</p>
-        <button type="button" class="mk-text-more" data-toggle-description>설명 더보기</button>
-        <div class="mk-detail-meta"><div><small>총 시간</small><strong th:text="${T(java.lang.String).format('%d분 %02d초', lecture.durationSeconds/60, lecture.durationSeconds%60)}">0분</strong></div><div><small>수강 기간</small><strong th:text="${lecture.viewingDays == null ? '무제한' : lecture.viewingDays + '일'}">무제한</strong></div><div><small>가격</small><strong th:text="${lecture.pricingType.name()=='FREE' ? '무료' : #numbers.formatInteger(lecture.price,0,'COMMA') + '원'}">무료</strong></div></div>
-        <div th:if="${currentUser == null}" class="mk-action-stack"><a class="mk-primary-btn" th:href="@{/auth/login}">로그인 후 이용하기</a><a class="mk-secondary-btn" href="/auth/signup">회원가입</a></div>
-        <div th:if="${currentUser != null}" class="mk-action-stack">
-          <a th:if="${card.accessAvailable}" class="mk-primary-btn" th:href="@{/watch/{id}(id=${lecture.id})}">강의 이어보기</a>
-          <form th:if="${!card.accessAvailable and lecture.pricingType.name()=='FREE'}" th:action="@{/lectures/{id}/enroll-free(id=${lecture.id})}" method="post"><button class="mk-primary-btn w-100" type="submit">무료 수강 시작</button></form>
-          <a th:if="${!card.accessAvailable and lecture.pricingType.name()=='PAID'}" class="mk-primary-btn" th:href="@{/payments/checkout/{id}(id=${lecture.id})}">구매하기</a>
-          <button th:if="${!card.owned}" class="mk-secondary-btn mk-wish-detail" type="button" th:classappend="${card.wished} ? ' active' : ''" th:attr="data-wish-id=${lecture.id}" th:text="${card.wished ? '찜 해제' : '찜 목록에 담기'}">찜 목록에 담기</button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <section class="mk-long-description" id="fullDescription"><div class="mk-section-heading"><div><small>ABOUT CLASS</small><h2>강의 소개</h2></div></div><div class="mk-description-text" th:text="${lecture.description}"></div><div class="mk-detail-image-stack"><img th:each="img:${images}" th:src="@{/media/lectures/{lid}/images/{iid}(lid=${lecture.id},iid=${img.id})}" alt="강의 소개 이미지"></div></section>
-  <section class="mk-attachments" th:if="${!#lists.isEmpty(attachments)}"><div class="mk-section-heading"><div><small>MATERIALS</small><h2>강의 자료</h2></div></div><p th:if="${!card.accessAvailable}">자료 파일은 해당 강의를 수강할 수 있는 회원에게만 제공됩니다.</p><a th:if="${card.accessAvailable}" th:each="a:${attachments}" th:href="@{/secure-media/lectures/{lid}/attachments/{aid}(lid=${lecture.id},aid=${a.id})}"><i class="icon-download"></i><span th:text="${a.originalName}">파일</span></a></section>
-</div></main>
-<th:block th:replace="~{front/fragments/common :: footer}"></th:block>
-</div>
-<th:block th:replace="~{front/fragments/common :: script}"></th:block>
-<script src="/front/js/lecture.js"></script>
+	<div id="wrapper" class="clearfix">
+		<th:block th:replace="~{front/fragments/common :: header}"></th:block>
+		<main class="mk-detail-page">
+			<div class="container">
+				<div class="row g-4">
+					<div class="col-12 col-lg-7">
+						<div class="mk-detail-gallery">
+							<div class="mk-gallery-main" th:if="${!#lists.isEmpty(images)}"><img id="mainIntroImage"
+									th:src="@{/media/lectures/{lid}/images/{iid}(lid=${lecture.id},iid=${images[0].id})}"
+									alt="강의 소개"></div>
+							<div class="mk-gallery-main mk-thumb-placeholder" th:if="${#lists.isEmpty(images)}">
+								<span>MONICA KIM ONLINE CLASS</span></div>
+							<div class="mk-gallery-thumbs" th:if="${images.size() > 1}"><button th:each="img:${images}"
+									type="button" class="js-gallery-thumb"
+									th:attr="data-src=@{/media/lectures/{lid}/images/{iid}(lid=${lecture.id},iid=${img.id})}"><img
+										th:src="@{/media/lectures/{lid}/images/{iid}(lid=${lecture.id},iid=${img.id})}"
+										alt="소개 이미지"></button></div>
+						</div>
+					</div>
+					<div class="col-12 col-lg-5">
+						<div class="mk-purchase-panel">
+							<div class="mk-tags"><span th:each="tag:${tags}" th:text="${'#' + tag}">#영어</span></div>
+							<h1 th:text="${lecture.title}">강의 제목</h1>
+							<p class="mk-detail-intro" th:text="${lecture.description}">설명</p>
+							<button type="button" class="mk-text-more" data-toggle-description>설명 더보기</button>
+							<div class="mk-detail-meta">
+								<div><small>총 시간</small><strong
+										th:text="${T(java.lang.String).format('%d분 %02d초', lecture.durationSeconds/60, lecture.durationSeconds%60)}">0분</strong>
+								</div>
+								<div><small>수강 기간</small><strong
+										th:text="${lecture.viewingDays == null ? '무제한' : lecture.viewingDays + '일'}">무제한</strong>
+								</div>
+								<div><small>가격</small><strong
+										th:text="${lecture.pricingType.name()=='FREE' ? '무료' : #numbers.formatInteger(lecture.price,0,'COMMA') + '원'}">무료</strong>
+								</div>
+							</div>
+							<div th:if="${currentUser == null}" class="mk-action-stack"><a class="mk-primary-btn"
+									th:href="@{/auth/login}">로그인 후 이용하기</a><a class="mk-secondary-btn"
+									href="/auth/signup">회원가입</a></div>
+							<div th:if="${currentUser != null}" class="mk-action-stack">
+								<a th:if="${card.accessAvailable}" class="mk-primary-btn"
+									th:href="@{/watch/{id}(id=${lecture.id})}">강의 이어보기</a>
+								<form th:if="${!card.accessAvailable and lecture.pricingType.name()=='FREE'}"
+									th:action="@{/lectures/{id}/enroll-free(id=${lecture.id})}" method="post"><button
+										class="mk-primary-btn w-100" type="submit">무료 수강 시작</button></form>
+								<a th:if="${!card.accessAvailable and lecture.pricingType.name()=='PAID'}"
+									class="mk-primary-btn"
+									th:href="@{/payments/checkout/{id}(id=${lecture.id})}">구매하기</a>
+								<button th:if="${!card.owned}" class="mk-secondary-btn mk-wish-detail" type="button"
+									th:classappend="${card.wished} ? ' active' : ''"
+									th:attr="data-wish-id=${lecture.id}"
+									th:text="${card.wished ? '찜 해제' : '찜 목록에 담기'}">찜 목록에 담기</button>
+							</div>
+						</div>
+					</div>
+				</div>
+				<section class="mk-long-description" id="fullDescription">
+					<div class="mk-section-heading">
+						<div><small>ABOUT CLASS</small>
+							<h2>강의 소개</h2>
+						</div>
+					</div>
+					<div class="mk-description-text" th:text="${lecture.description}"></div>
+					<div class="mk-detail-image-stack"><img th:each="img:${images}"
+							th:src="@{/media/lectures/{lid}/images/{iid}(lid=${lecture.id},iid=${img.id})}"
+							alt="강의 소개 이미지"></div>
+				</section>
+				<section class="mk-attachments" th:if="${!#lists.isEmpty(attachments)}">
+					<div class="mk-section-heading">
+						<div><small>MATERIALS</small>
+							<h2>강의 자료</h2>
+						</div>
+					</div>
+					<p th:if="${!card.accessAvailable}">자료 파일은 해당 강의를 수강할 수 있는 회원에게만 제공됩니다.</p><a
+						th:if="${card.accessAvailable}" th:each="a:${attachments}"
+						th:href="@{/secure-media/lectures/{lid}/attachments/{aid}(lid=${lecture.id},aid=${a.id})}"><i
+							class="icon-download"></i><span th:text="${a.originalName}">파일</span></a>
+				</section>
+			</div>
+		</main>
+		<th:block th:replace="~{front/fragments/common :: footer}"></th:block>
+	</div>
+	<th:block th:replace="~{front/fragments/common :: script}"></th:block>
+	<script src="/front/js/lecture.js"></script>
 </body>
+
 </html>

@@ -1,1 +1,23 @@
-<!DOCTYPE html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{front/fragments/common :: head('접근할 수 없음')}"></head><body class="stretched mk-platform-page"><div id="wrapper"><th:block th:replace="~{front/fragments/common :: header}"></th:block><main class="mk-message-page"><div class="container"><div class="mk-message-card"><i class="icon-lock"></i><h1>이 강의를 시청할 수 없습니다.</h1><p th:text="${message}">구매 또는 수강기간을 확인해주세요.</p><a class="mk-primary-btn" href="/my/classroom">내 강의실 확인</a><a class="mk-secondary-btn" href="/lectures">강의 목록</a></div></div></main><th:block th:replace="~{front/fragments/common :: footer}"></th:block></div><th:block th:replace="~{front/fragments/common :: script}"></th:block></body></html>
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{front/fragments/common :: head('접근할 수 없음')}"></head>
+
+<body class="stretched mk-platform-page">
+	<div id="wrapper">
+		<th:block th:replace="~{front/fragments/common :: header}"></th:block>
+		<main class="mk-message-page">
+			<div class="container">
+				<div class="mk-message-card"><i class="icon-lock"></i>
+					<h1>이 강의를 시청할 수 없습니다.</h1>
+					<p th:text="${message}">구매 또는 수강기간을 확인해주세요.</p><a class="mk-primary-btn" href="/my/classroom">내 강의실
+						확인</a><a class="mk-secondary-btn" href="/lectures">강의 목록</a>
+				</div>
+			</div>
+		</main>
+		<th:block th:replace="~{front/fragments/common :: footer}"></th:block>
+	</div>
+	<th:block th:replace="~{front/fragments/common :: script}"></th:block>
+</body>
+
+</html>

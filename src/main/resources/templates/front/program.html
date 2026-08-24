@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html dir="ltr" lang="ko" xmlns:th="http://www.thymeleaf.org">
 
-<head th:replace="/front/fragments/common :: head('프로그램')">
+<head th:replace="front/fragments/common :: head('프로그램')">
 
 </head>
 
 <body class="stretched">
     <div id="wrapper" class="clearfix">
 
-        <th:block th:replace="/front/fragments/common :: header"></th:block>
+        <th:block th:replace="front/fragments/common :: header"></th:block>
 
         <section id="page-title" class="page-title-parallax page-title-dark include-header"
             style="padding: 80px 0; background-size: cover; background-position: center center;">
@@ -292,9 +292,9 @@
             </div>
         </section>
 
-       <th:block th:replace="/front/fragments/common :: footer"></th:block>
+       <th:block th:replace="front/fragments/common :: footer"></th:block>
     </div>
-    <th:block th:replace="/front/fragments/common :: script"></th:block>
+    <th:block th:replace="front/fragments/common :: script"></th:block>
 
 
 </body>

@@ -1,1 +1,23 @@
-<!DOCTYPE html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{front/fragments/common :: head('요청 확인')}"></head><body class="stretched mk-platform-page"><div id="wrapper"><th:block th:replace="~{front/fragments/common :: header}"></th:block><main class="mk-message-page"><div class="container"><div class="mk-message-card"><h1>요청을 처리할 수 없습니다.</h1><p th:text="${message}"></p><button class="mk-primary-btn" type="button" onclick="history.back()">이전 화면</button></div></div></main><th:block th:replace="~{front/fragments/common :: footer}"></th:block></div><th:block th:replace="~{front/fragments/common :: script}"></th:block></body></html>
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{front/fragments/common :: head('요청 확인')}"></head>
+
+<body class="stretched mk-platform-page">
+	<div id="wrapper">
+		<th:block th:replace="~{front/fragments/common :: header}"></th:block>
+		<main class="mk-message-page">
+			<div class="container">
+				<div class="mk-message-card">
+					<h1>요청을 처리할 수 없습니다.</h1>
+					<p th:text="${message}"></p><button class="mk-primary-btn" type="button" onclick="history.back()">이전
+						화면</button>
+				</div>
+			</div>
+		</main>
+		<th:block th:replace="~{front/fragments/common :: footer}"></th:block>
+	</div>
+	<th:block th:replace="~{front/fragments/common :: script}"></th:block>
+</body>
+
+</html>

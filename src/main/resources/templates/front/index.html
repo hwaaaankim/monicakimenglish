@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html dir="ltr" lang="ko" xmlns:th="http://www.thymeleaf.org">
 
-<head th:replace="/front/fragments/common :: head('홈')">
+<head th:replace="front/fragments/common :: head('홈')">
 
 </head>
 
 <body class="stretched">
 
     <div id="wrapper" class="clearfix">
-        <th:block th:replace="/front/fragments/common :: header"></th:block>
+        <th:block th:replace="front/fragments/common :: header"></th:block>
         <section id="slider" class="slider-element revslider-wrap slider-parallax min-vh-100 include-header">
             <div class="slider-inner">
                 <div id="rev_slider_579_1_wrapper" class="rev_slider_wrapper fullscreen-container"
@@ -346,10 +346,10 @@
             </div>
         </section>
 
-       <th:block th:replace="/front/fragments/common :: footer"></th:block>
+       <th:block th:replace="front/fragments/common :: footer"></th:block>
     </div>
 
-    <th:block th:replace="/front/fragments/common :: script"></th:block>
+    <th:block th:replace="front/fragments/common :: script"></th:block>
 
 </body>
 

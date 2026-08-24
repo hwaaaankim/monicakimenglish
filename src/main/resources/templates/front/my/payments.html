@@ -1,3 +1,52 @@
-<!DOCTYPE html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{front/fragments/common :: head('결제 내역')}"></head><body class="stretched mk-platform-page"><div id="wrapper" class="clearfix"><th:block th:replace="~{front/fragments/common :: header}"></th:block>
-<main class="mk-my-page"><div class="container"><div class="mk-page-title"><small>PAYMENTS</small><h1>결제 내역 확인</h1><p>온라인 PG 결제 내역을 기준으로 구성한 화면이며 현재 개발 단계에서는 MOCK 결제 건이 표시됩니다.</p></div><div class="mk-table-card"><div class="table-responsive"><table class="table mk-table"><thead><tr><th>결제일</th><th>주문번호</th><th>강의</th><th>결제수단</th><th>금액</th><th>상태</th></tr></thead><tbody><tr th:each="p:${payments}"><td th:text="${#temporals.format(p.requestedAt,'yyyy.MM.dd HH:mm')}"></td><td th:text="${p.orderNo}"></td><td><a th:href="@{/lectures/{id}(id=${p.lecture.id})}" th:text="${p.lectureTitleSnapshot}"></a></td><td th:text="${p.provider}"></td><td th:text="${#numbers.formatInteger(p.amount,0,'COMMA') + '원'}"></td><td><span class="mk-status-badge" th:text="${p.status}"></span></td></tr><tr th:if="${#lists.isEmpty(payments)}"><td colspan="6" class="text-center py-5">결제 내역이 없습니다.</td></tr></tbody></table></div></div></div></main>
-<th:block th:replace="~{front/fragments/common :: footer}"></th:block></div><th:block th:replace="~{front/fragments/common :: script}"></th:block></body></html>
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{front/fragments/common :: head('결제 내역')}"></head>
+
+<body class="stretched mk-platform-page">
+	<div id="wrapper" class="clearfix">
+		<th:block th:replace="~{front/fragments/common :: header}"></th:block>
+		<main class="mk-my-page">
+			<div class="container">
+				<div class="mk-page-title"><small>PAYMENTS</small>
+					<h1>결제 내역 확인</h1>
+					<p>온라인 PG 결제 내역을 기준으로 구성한 화면이며 현재 개발 단계에서는 MOCK 결제 건이 표시됩니다.</p>
+				</div>
+				<div class="mk-table-card">
+					<div class="table-responsive">
+						<table class="table mk-table">
+							<thead>
+								<tr>
+									<th>결제일</th>
+									<th>주문번호</th>
+									<th>강의</th>
+									<th>결제수단</th>
+									<th>금액</th>
+									<th>상태</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="p:${payments}">
+									<td th:text="${#temporals.format(p.requestedAt,'yyyy.MM.dd HH:mm')}"></td>
+									<td th:text="${p.orderNo}"></td>
+									<td><a th:href="@{/lectures/{id}(id=${p.lecture.id})}"
+											th:text="${p.lectureTitleSnapshot}"></a></td>
+									<td th:text="${p.provider}"></td>
+									<td th:text="${#numbers.formatInteger(p.amount,0,'COMMA') + '원'}"></td>
+									<td><span class="mk-status-badge" th:text="${p.status}"></span></td>
+								</tr>
+								<tr th:if="${#lists.isEmpty(payments)}">
+									<td colspan="6" class="text-center py-5">결제 내역이 없습니다.</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</main>
+		<th:block th:replace="~{front/fragments/common :: footer}"></th:block>
+	</div>
+	<th:block th:replace="~{front/fragments/common :: script}"></th:block>
+</body>
+
+</html>
