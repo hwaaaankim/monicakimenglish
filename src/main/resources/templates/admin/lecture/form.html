@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{admin/fragments/common :: head}"></head>
+
+<body>
+	<th:block th:replace="~{admin/fragments/common :: header}"></th:block>
+	<main class="mk-admin-main mk-lecture-editor-page">
+		<div class="container-fluid">
+			<div class="mk-admin-title">
+				<div>
+					<small>LECTURE EDITOR</small>
+					<h1 th:text="${lecture == null ? '신규 강의 등록' : '강의 수정'}"></h1>
+				</div>
+				<a class="mk-admin-secondary" href="/admin/lectures">목록</a>
+			</div>
+
+			<form id="lectureForm"
+				th:action="${lecture == null ? '/admin/lectures' : '/admin/lectures/' + lecture.id}"
+				method="post" enctype="multipart/form-data" class="mk-admin-form"
+				th:attr="data-mode=${lecture == null ? 'create' : 'edit'}">
+
+				<div th:if="${formError != null}" class="mk-lecture-form-error" role="alert">
+					<i class="fa fa-exclamation-circle" aria-hidden="true"></i>
+					<div>
+						<strong>영상 등록 처리를 완료하지 못했습니다.</strong>
+						<span th:text="${formError}">오류 내용을 확인해주세요.</span>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col-xs-12 col-lg-9">
+						<div class="mk-admin-panel mk-lecture-form-panel">
+							<h2>기본 정보</h2>
+							<label>영상 제목
+								<input name="title" th:value="${lecture?.title}" maxlength="200" required>
+							</label>
+							<label>영상 설명
+								<textarea name="description" rows="8" required th:text="${lecture?.description}"></textarea>
+							</label>
+
+							<div class="row mk-equal-control-row">
+								<div class="col-sm-4">
+									<label>가격 구분
+										<select name="pricingType" id="pricingType">
+											<option value="FREE" th:selected="${lecture == null or lecture.pricingType.name()=='FREE'}">무료</option>
+											<option value="PAID" th:selected="${lecture != null and lecture.pricingType.name()=='PAID'}">유료</option>
+										</select>
+									</label>
+								</div>
+								<div class="col-sm-4">
+									<label>가격(원)
+										<input type="number" min="0" step="100" name="price" id="priceInput" th:value="${lecture?.price ?: 0}">
+									</label>
+								</div>
+								<div class="col-sm-4">
+									<label>시청 가능일 (비우면 무제한)
+										<input type="number" min="1" name="viewingDays" th:value="${lecture?.viewingDays}">
+									</label>
+								</div>
+							</div>
+
+							<div class="row mk-equal-control-row">
+								<div class="col-sm-8">
+									<label>주제/키워드
+										<input name="tags" th:value="${tagText}" placeholder="기초영어, 발음, 회화">
+									</label>
+								</div>
+								<div class="col-sm-4">
+									<label>공개 상태
+										<select name="status">
+											<option value="DRAFT" th:selected="${lecture == null or lecture.status.name()=='DRAFT'}">임시저장</option>
+											<option value="PUBLISHED" th:selected="${lecture != null and lecture.status.name()=='PUBLISHED'}">공개</option>
+											<option value="ARCHIVED" th:selected="${lecture != null and lecture.status.name()=='ARCHIVED'}">보관</option>
+										</select>
+									</label>
+								</div>
+							</div>
+						</div>
+
+						<div class="mk-admin-panel mk-lecture-form-panel">
+							<div class="mk-panel-heading mk-lecture-panel-heading">
+								<div>
+									<h2>영상 파일</h2>
+									<p>신규 등록 시 필수이며, 수정 화면에서는 교체할 때만 새 파일을 선택합니다.</p>
+								</div>
+							</div>
+
+							<div th:if="${lecture != null and lecture.videoOriginalName != null}" class="mk-existing-file mk-current-video">
+								<i class="fa fa-film"></i>
+								<div>
+									<strong>현재 영상 <em class="mk-video-format-badge">웹 재생용</em></strong>
+									<span th:text="${lecture.videoOriginalName}"></span>
+								</div>
+							</div>
+
+							<div class="mk-file-picker-row mk-file-picker-row-large">
+								<label class="mk-file-select-button" for="videoFile">
+									<i class="fa fa-film"></i>
+									<span th:text="${lecture == null ? '영상 파일 선택' : '교체 영상 선택'}">영상 파일 선택</span>
+								</label>
+								<input type="file" name="video" id="videoFile"
+								accept="video/*,.mov,.m4v,.mkv,.avi,.wmv,.webm,.mpg,.mpeg,.ts,.mts,.m2ts,.flv,.vob,.3gp,.3g2" hidden>
+								<div class="mk-file-selected-info" id="videoFileName"
+									th:text="${lecture == null ? '선택된 영상 파일 없음' : '새 영상을 선택하지 않으면 현재 영상이 유지됩니다.'}"></div>
+							</div>
+							<div id="videoMeta" class="mk-file-meta mk-video-meta"></div>
+
+							<div class="mk-video-normalize-guide">
+								<div class="mk-video-normalize-icon"><i class="fa fa-magic" aria-hidden="true"></i></div>
+								<div>
+									<strong>영상 웹 최적화는 자동으로 처리됩니다.</strong>
+									<p>MP4·MOV·M4V·MKV·AVI·WMV·WebM·MPEG 등 원본을 검사한 뒤 고객 재생용 MP4(H.264/AAC)로 저장합니다.
+									이미 호환되는 H.264/AAC 영상은 재인코딩 없이 컨테이너만 최적화하여 원본 화질을 그대로 유지하고,
+									변환이 필요한 영상도 원본 해상도와 프레임을 유지한 고화질 설정으로 처리합니다.</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="mk-admin-panel mk-lecture-form-panel" id="introImageSection">
+							<div class="mk-panel-heading mk-lecture-panel-heading">
+								<div>
+									<h2>소개 이미지</h2>
+									<p>이미지는 1장 이상 필수입니다. 모든 최종 결과는 1280×720(16:9)로 저장됩니다.</p>
+								</div>
+								<div class="mk-image-summary-badges">
+									<span id="introImageCountBadge">총 0장</span>
+									<span id="thumbnailStatusBadge" class="is-warning">썸네일 미선택</span>
+								</div>
+							</div>
+
+							<div th:if="${images != null and !#lists.isEmpty(images)}" class="mk-existing-media mk-lecture-image-grid" id="existingIntroImages">
+								<article th:each="img, stat : ${images}" class="mk-lecture-image-card" data-existing-image th:attr="data-image-id=${img.id}">
+									<div class="mk-lecture-image-preview">
+										<img th:src="@{/media/lectures/{lid}/images/{iid}(lid=${lecture.id},iid=${img.id})}" alt="기존 소개 이미지">
+										<span class="mk-image-origin-badge">기존</span>
+										<span class="mk-image-thumbnail-badge" th:classappend="${stat.first} ? ' is-visible' : ''">THUMBNAIL</span>
+									</div>
+									<div class="mk-lecture-image-card-body">
+										<strong class="mk-lecture-image-name" th:text="${img.originalName ?: '소개 이미지'}">소개 이미지</strong>
+										<div class="mk-lecture-image-card-actions">
+											<label class="mk-image-check mk-thumbnail-check">
+												<input type="checkbox" data-thumbnail-choice th:attr="data-thumbnail-key=${'existing:' + img.id}" th:checked="${stat.first}">
+												<span>썸네일</span>
+											</label>
+											<label class="mk-image-check mk-delete-check">
+												<input type="checkbox" name="deleteImageIds" th:value="${img.id}" data-delete-existing>
+												<span>삭제</span>
+											</label>
+										</div>
+									</div>
+								</article>
+							</div>
+
+							<div class="mk-image-upload-box">
+								<div class="mk-file-picker-row">
+									<label class="mk-file-select-button" for="introImagePicker">
+										<i class="fa fa-picture-o"></i>
+										<span>사진 선택</span>
+									</label>
+									<input type="file" id="introImagePicker" accept="image/*" multiple hidden>
+									<div class="mk-file-selected-info" id="introImagePickerInfo">이미지 1장 이상 · 여러 장을 한 번에 선택할 수 있습니다.</div>
+								</div>
+								<div class="mk-image-upload-guide">
+									<i class="fa fa-info-circle"></i>
+									<span>사진 선택 → 1단계 영역 자르기 → 2단계 16:9 배치 순서로 각각 편집합니다. 이미지가 2장 이상이면 썸네일 체크박스에서 정확히 1장을 선택해야 합니다.</span>
+								</div>
+							</div>
+
+							<div id="editedImageList" class="mk-lecture-image-grid mk-new-image-grid"></div>
+							<div id="editedImageEmpty" class="mk-image-empty-state">새로 편집한 소개 이미지가 없습니다.</div>
+
+							<input type="file" name="introImages" id="processedIntroImages" multiple hidden>
+							<input type="hidden" name="thumbnailSelection" id="thumbnailSelection">
+						</div>
+
+						<div class="mk-admin-panel mk-lecture-form-panel">
+							<div class="mk-panel-heading mk-lecture-panel-heading">
+								<div>
+									<h2>첨부 자료</h2>
+									<p>PDF, 문서, 압축파일 등 강의와 함께 제공할 자료를 여러 개 선택할 수 있습니다.</p>
+								</div>
+							</div>
+
+							<div th:if="${attachments != null and !#lists.isEmpty(attachments)}" class="mk-existing-files mk-attachment-existing-list">
+								<label th:each="a:${attachments}">
+									<span th:text="${a.originalName}"></span>
+									<span class="mk-image-check mk-delete-check">
+										<input type="checkbox" name="deleteAttachmentIds" th:value="${a.id}">
+										<span>삭제</span>
+									</span>
+								</label>
+							</div>
+
+							<div class="mk-file-picker-row">
+								<label class="mk-file-select-button" for="attachmentFiles">
+									<i class="fa fa-paperclip"></i>
+									<span>첨부파일 선택</span>
+								</label>
+								<input type="file" name="attachments" id="attachmentFiles" multiple hidden>
+								<div class="mk-file-selected-info" id="attachmentFileInfo">선택된 새 첨부파일 없음</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-xs-12 col-lg-3">
+						<div class="mk-admin-panel mk-sticky-panel mk-lecture-check-panel">
+							<h2>등록 체크</h2>
+							<ul class="mk-check-list">
+								<li>영상 제목·설명</li>
+								<li>무료/유료 및 금액</li>
+								<li>주제 키워드</li>
+								<li>소개 이미지 1장 이상</li>
+								<li>2장 이상이면 썸네일 1장 지정</li>
+								<li>모든 이미지 16:9 편집 완료</li>
+								<li>수강 가능일</li>
+								<li>첨부자료</li>
+								<li>공개 상태</li>
+							</ul>
+							<button class="mk-admin-primary full mk-lecture-submit-button" type="submit" th:text="${lecture == null ? '강의 등록' : '변경사항 저장'}"></button>
+							<p>ARCHIVED는 실제 삭제가 아니라 보관 상태로 전환하여 구매·시청 기록을 유지합니다.</p>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</main>
+
+	<div class="mk-lecture-image-editor-modal" id="lectureImageEditorModal" aria-hidden="true">
+		<div class="mk-lecture-image-editor-backdrop"></div>
+		<div class="mk-lecture-image-editor-dialog" role="dialog" aria-modal="true" aria-labelledby="lectureImageEditorTitle">
+			<div class="mk-lecture-image-editor-header">
+				<div>
+					<small>IMAGE EDITOR</small>
+					<h2 id="lectureImageEditorTitle">소개 이미지 편집</h2>
+				</div>
+				<button type="button" class="mk-editor-close" id="lectureImageEditorClose" aria-label="닫기">×</button>
+			</div>
+
+			<div class="mk-lecture-image-editor-body">
+				<div class="mk-editor-steps" aria-label="이미지 편집 단계">
+					<div class="mk-editor-step is-active" id="cropStepOneTab">
+						<span>1</span>
+						<strong>영역 자르기</strong>
+					</div>
+					<div class="mk-editor-step is-disabled" id="cropStepTwoTab">
+						<span>2</span>
+						<strong>16:9 배치</strong>
+					</div>
+				</div>
+
+				<p class="mk-editor-guide" id="cropGuide"></p>
+
+				<div id="cropStepOnePanel">
+					<div class="mk-crop-source-stage-wrap" id="cropSourceStageWrap">
+						<div class="mk-crop-source-stage" id="cropSourceStage">
+							<img id="cropSourceImage" class="mk-crop-source-image" alt="원본 이미지">
+							<div class="mk-crop-selection" id="cropSelection">
+								<span class="mk-crop-handle is-nw" data-crop-handle="nw"></span>
+								<span class="mk-crop-handle is-n" data-crop-handle="n"></span>
+								<span class="mk-crop-handle is-ne" data-crop-handle="ne"></span>
+								<span class="mk-crop-handle is-e" data-crop-handle="e"></span>
+								<span class="mk-crop-handle is-se" data-crop-handle="se"></span>
+								<span class="mk-crop-handle is-s" data-crop-handle="s"></span>
+								<span class="mk-crop-handle is-sw" data-crop-handle="sw"></span>
+								<span class="mk-crop-handle is-w" data-crop-handle="w"></span>
+							</div>
+						</div>
+					</div>
+
+					<div class="mk-editor-control-card">
+						<div class="mk-editor-control-title">자르기 영역 수치 입력</div>
+						<div class="mk-editor-number-grid">
+							<label>X(px)<input type="number" min="0" step="1" id="cropX"></label>
+							<label>Y(px)<input type="number" min="0" step="1" id="cropY"></label>
+							<label>너비(px)<input type="number" min="1" step="1" id="cropWidth"></label>
+							<label>높이(px)<input type="number" min="1" step="1" id="cropHeight"></label>
+						</div>
+						<div class="mk-editor-button-row">
+							<button type="button" class="mk-editor-button" id="cropFullImageBtn">원본 전체</button>
+							<button type="button" class="mk-editor-button" id="cropCenterAreaBtn">중앙 60%</button>
+							<button type="button" class="mk-editor-button" id="cropDrawAreaBtn">새 영역 드래그</button>
+							<button type="button" class="mk-editor-button is-primary mk-editor-next" id="cropNextBtn">다음: 위치시키기</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="is-hidden" id="cropStepTwoPanel">
+					<div class="mk-placement-layout">
+						<div class="mk-placement-stage-wrap">
+							<div class="mk-placement-stage" id="placementStage">
+								<img id="placementImage" class="mk-placement-image" alt="배치 이미지">
+							</div>
+							<div class="mk-placement-size-label">1280 × 720 · 16:9</div>
+						</div>
+
+						<div class="mk-placement-controls">
+							<div class="mk-editor-control-card is-first">
+								<div class="mk-editor-control-title">빠른 위치</div>
+								<div class="mk-position-grid">
+									<button type="button" class="mk-editor-button" data-placement-align="center">중앙</button>
+									<button type="button" class="mk-editor-button" data-placement-align="top">상단</button>
+									<button type="button" class="mk-editor-button" data-placement-align="left">좌측</button>
+									<button type="button" class="mk-editor-button" data-placement-align="right">우측</button>
+									<button type="button" class="mk-editor-button" data-placement-align="bottom">하단</button>
+								</div>
+							</div>
+
+							<div class="mk-editor-control-card">
+								<div class="mk-editor-control-title">크기 조절</div>
+								<div class="mk-editor-button-row mk-fit-buttons">
+									<button type="button" class="mk-editor-button" id="placementFitContainBtn">전체 맞춤</button>
+									<button type="button" class="mk-editor-button" id="placementFitCoverBtn">가득 채우기</button>
+									<button type="button" class="mk-editor-button" id="placementOriginalBtn">원본 크기</button>
+								</div>
+								<div class="mk-placement-zoom-row">
+									<button type="button" class="mk-editor-icon-button" id="placementZoomOutBtn">−</button>
+									<input type="range" min="10" max="1000" step="1" id="placementZoomRange">
+									<button type="button" class="mk-editor-icon-button" id="placementZoomInBtn">＋</button>
+									<span id="placementZoomValue" class="mk-editor-zoom-value">100%</span>
+								</div>
+							</div>
+
+							<div class="mk-editor-control-card">
+								<div class="mk-editor-control-title">위치·크기 수치 입력 (이미지 비율 유지)</div>
+								<div class="mk-editor-number-grid">
+									<label>X(px)<input type="number" step="1" id="placementX"></label>
+									<label>Y(px)<input type="number" step="1" id="placementY"></label>
+									<label>너비(px)<input type="number" min="1" step="1" id="placementWidth"></label>
+									<label>높이(px)<input type="number" min="1" step="1" id="placementHeight"></label>
+								</div>
+							</div>
+
+							<div class="mk-editor-control-card">
+								<div class="mk-editor-control-title">배경색</div>
+								<div class="mk-background-row">
+									<input type="color" value="#ffffff" id="placementBackgroundColor">
+									<input type="text" value="#ffffff" maxlength="7" id="placementBackgroundHex">
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="mk-lecture-image-editor-footer">
+				<button type="button" class="mk-editor-button is-hidden" id="cropBackBtn">이전: 다시 자르기</button>
+				<div class="mk-editor-footer-right">
+					<button type="button" class="mk-editor-button" id="cropCancelBtn">취소</button>
+					<button type="button" class="mk-editor-button is-primary is-hidden" id="cropSelectBtn">이 배치로 추가</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="mk-video-processing-overlay" id="videoProcessingOverlay" hidden aria-live="polite" aria-busy="true">
+		<div class="mk-video-processing-card">
+			<div class="mk-video-processing-spinner" aria-hidden="true"></div>
+			<strong>강의 영상을 안전하게 저장하고 있습니다.</strong>
+			<p id="videoProcessingMessage">업로드 후 영상 호환성을 검사하고 웹 재생용 MP4로 자동 최적화합니다.</p>
+			<small>고화질 또는 긴 영상은 처리에 시간이 걸릴 수 있습니다. 완료될 때까지 이 창을 닫지 마세요.</small>
+		</div>
+	</div>
+
+	<th:block th:replace="~{admin/fragments/common :: script}"></th:block>
+	<script src="/admin/js/lecture-editor.js?v=20260824-3"></script>
+</body>
+
+</html>

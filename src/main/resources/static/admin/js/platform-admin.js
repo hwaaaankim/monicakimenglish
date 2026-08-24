@@ -1,0 +1,1 @@
+(function(){const btn=document.querySelector('.mk-admin-menu-toggle'),side=document.querySelector('.mk-admin-sidebar');btn?.addEventListener('click',()=>side?.classList.toggle('open'));document.addEventListener('click',e=>{if(window.innerWidth<=991&&side?.classList.contains('open')&&!side.contains(e.target)&&!btn.contains(e.target))side.classList.remove('open');});})();

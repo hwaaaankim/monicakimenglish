@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{front/fragments/common :: head('회원가입')}"></head>
+<body class="stretched mk-platform-page">
+<div id="wrapper" class="clearfix">
+<th:block th:replace="~{front/fragments/common :: header}"></th:block>
+<section class="mk-auth-section">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-8">
+        <div class="mk-auth-card mk-signup-card">
+          <div class="mk-auth-heading"><span>JOIN</span><h1>회원가입</h1><p>필수 정보를 정확히 입력해 주세요. 이메일은 선택사항입니다.</p></div>
+          <div class="mk-alert error" th:if="${formError}" th:text="${formError}"></div>
+          <form th:action="@{/auth/signup}" th:object="${form}" method="post" id="signupForm">
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <div class="mk-field">
+                  <label class="mk-field-label-line" for="signupUsername"><span>아이디</span><small>영문·숫자 5~50자</small></label>
+                  <input th:field="*{username}" id="signupUsername" minlength="5" maxlength="50" pattern="[A-Za-z0-9]{5,50}" autocomplete="username" required>
+                  <span id="usernameCheck" class="mk-field-message"></span>
+                  <em th:errors="*{username}"></em>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="mk-field">
+                  <label class="mk-field-label-line" for="name"><span>성함</span></label>
+                  <input th:field="*{name}" required>
+                  <em th:errors="*{name}"></em>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="mk-field">
+                  <label class="mk-field-label-line" for="password"><span>비밀번호</span><small>영문+특수문자 포함 8자 이상</small></label>
+                  <input type="password" th:field="*{password}" autocomplete="new-password" required>
+                  <em th:errors="*{password}"></em>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="mk-field">
+                  <label class="mk-field-label-line" for="passwordConfirm"><span>비밀번호 확인</span></label>
+                  <input type="password" th:field="*{passwordConfirm}" autocomplete="new-password" required>
+                  <em th:errors="*{passwordConfirm}"></em>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="mk-field">
+                  <label class="mk-field-label-line" for="phone"><span>휴대폰번호</span></label>
+                  <input class="js-phone" type="tel" th:field="*{phone}" inputmode="numeric" maxlength="13" placeholder="010-0000-0000" required>
+                  <em th:errors="*{phone}"></em>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="mk-field">
+                  <label class="mk-field-label-line" for="email"><span>이메일</span><small>선택</small></label>
+                  <input type="email" th:field="*{email}" placeholder="example@email.com">
+                  <em th:errors="*{email}"></em>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="mk-field">
+                  <label class="mk-field-label-line" for="birthDate"><span>생년월일</span></label>
+                  <input type="date" th:field="*{birthDate}" required>
+                  <em th:errors="*{birthDate}"></em>
+                </div>
+              </div>
+              <div class="col-12"><label class="mk-privacy-box"><input type="checkbox" th:field="*{privacyAgreed}"><span><strong>개인정보 수집 및 이용에 동의합니다. (필수)</strong><small>회원 식별, 결제·수강 권한 관리, 고객지원 및 본인확인을 위해 필요한 정보를 수집합니다.</small></span></label><em class="mk-error-text" th:errors="*{privacyAgreed}"></em></div>
+            </div>
+            <button class="mk-primary-btn w-100 mt-4" type="submit" id="signupSubmit">회원가입</button>
+          </form>
+          <div class="mk-auth-bottom">이미 회원이신가요? <a href="/auth/login">로그인을 진행하시겠습니까?</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<th:block th:replace="~{front/fragments/common :: footer}"></th:block>
+</div>
+<th:block th:replace="~{front/fragments/common :: script}"></th:block>
+<script src="/front/js/auth.js?v=20260824-2"></script>
+</body>
+</html>

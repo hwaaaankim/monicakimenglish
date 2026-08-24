@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{front/fragments/common :: head('영상강의실')}"></head>
+<body class="stretched mk-platform-page mk-lecture-catalog-page">
+<div id="wrapper" class="clearfix">
+    <th:block th:replace="~{front/fragments/common :: header}"></th:block>
+
+    <section class="mk-catalog-hero">
+        <div class="container">
+            <span>ONLINE CLASS</span>
+            <h1>영상강의실</h1>
+            <p>원하는 주제와 강의를 찾아보고, 구매한 강의는 언제든 내 강의실에서 이어서 학습하세요.</p>
+        </div>
+    </section>
+
+    <main class="mk-catalog-main">
+        <div class="container">
+            <form class="mk-filter-panel" method="get" action="/lectures">
+                <div class="row g-2 align-items-end">
+                    <div class="col-12 col-lg-4">
+                        <label>
+                            제목·설명 검색
+                            <input type="search" name="q" th:value="${q}" placeholder="찾고 싶은 강의를 입력하세요">
+                        </label>
+                    </div>
+                    <div class="col-6 col-lg-2">
+                        <label>
+                            주제
+                            <select name="tag">
+                                <option value="">전체 주제</option>
+                                <option th:each="t : ${tags}" th:value="${t}" th:selected="${t == tag}" th:text="${t}"></option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="col-6 col-lg-2">
+                        <label>
+                            가격
+                            <select name="pricing">
+                                <option value="ALL" th:selected="${pricing == 'ALL'}">전체</option>
+                                <option value="FREE" th:selected="${pricing == 'FREE'}">무료</option>
+                                <option value="PAID" th:selected="${pricing == 'PAID'}">유료</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="col-6 col-lg-2" th:if="${currentUser != null}">
+                        <label>
+                            구매 여부
+                            <select name="ownership">
+                                <option value="ALL" th:selected="${ownership == 'ALL'}">전체</option>
+                                <option value="PURCHASED" th:selected="${ownership == 'PURCHASED'}">구입한 영상</option>
+                                <option value="NOT_PURCHASED" th:selected="${ownership == 'NOT_PURCHASED'}">미구입 영상</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="col-6 col-lg-2">
+                        <button class="mk-primary-btn w-100" type="submit">검색</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="mk-section-heading">
+                <div>
+                    <small>LECTURES</small>
+                    <h2>전체 강의</h2>
+                </div>
+                <strong th:text="${lectures.size() + '개'}">0개</strong>
+            </div>
+
+            <div th:if="${#lists.isEmpty(lectures)}" class="mk-empty-state">
+                <i class="icon-film"></i>
+                <h3>조건에 맞는 강의가 없습니다.</h3>
+                <p>검색 조건을 바꾸어 다시 확인해주세요.</p>
+            </div>
+
+            <div class="row g-3 mk-lecture-grid">
+                <div class="col-12 col-md-6 col-lg-4 col-xl-3" th:each="item : ${lectures}">
+                    <th:block th:replace="~{front/fragments/lecture-card :: card(${item})}"></th:block>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <th:block th:replace="~{front/fragments/common :: footer}"></th:block>
+</div>
+
+<th:block th:replace="~{front/fragments/common :: script}"></th:block>
+<script src="/front/js/lecture.js"></script>
+</body>
+</html>

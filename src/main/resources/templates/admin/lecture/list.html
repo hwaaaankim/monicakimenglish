@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{admin/fragments/common :: head}"></head>
+
+<body>
+	<th:block th:replace="~{admin/fragments/common :: header}"></th:block>
+	<main class="mk-admin-main">
+		<div class="container-fluid">
+			<div class="mk-admin-title">
+				<div><small>LECTURES</small>
+					<h1>영상관리</h1>
+				</div><a class="mk-admin-primary" href="/admin/lectures/new"><i class="fa fa-plus"></i> 신규 강의 등록</a>
+			</div>
+			<form class="mk-admin-filter">
+				<div class="row">
+					<div class="col-xs-12 col-lg-6"><label>강의 제목<input name="q" th:value="${q}"
+								placeholder="제목 검색"></label></div>
+					<div class="col-xs-5 col-lg-2"><label>상태<select name="status">
+								<option value="ALL">전체</option>
+								<option value="DRAFT" th:selected="${status=='DRAFT'}">임시저장</option>
+								<option value="PUBLISHED" th:selected="${status=='PUBLISHED'}">공개</option>
+								<option value="ARCHIVED" th:selected="${status=='ARCHIVED'}">삭제/보관</option>
+							</select></label></div>
+					<div class="col-xs-4 col-lg-2"><label>가격<select name="pricing">
+								<option value="ALL">전체</option>
+								<option value="FREE" th:selected="${pricing=='FREE'}">무료</option>
+								<option value="PAID" th:selected="${pricing=='PAID'}">유료</option>
+							</select></label></div>
+					<div class="col-xs-3 col-lg-2"><button>검색</button></div>
+				</div>
+			</form>
+			<div class="mk-admin-panel">
+				<div class="table-responsive">
+					<table class="table mk-admin-table">
+						<thead>
+							<tr>
+								<th>ID</th>
+								<th>강의명</th>
+								<th>가격</th>
+								<th>수강기간</th>
+								<th>시간</th>
+								<th>용량</th>
+								<th>상태</th>
+								<th>등록일</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:each="l:${lectures}" class="clickable"
+								th:onclick="|location.href='/admin/lectures/${l.id}'|">
+								<td th:text="${l.id}"></td>
+								<td th:text="${l.title}"></td>
+								<td
+									th:text="${l.pricingType.name()=='FREE' ? '무료' : #numbers.formatInteger(l.price,0,'COMMA')+'원'}">
+								</td>
+								<td th:text="${l.viewingDays == null ? '무제한' : l.viewingDays+'일'}"></td>
+								<td
+									th:text="${T(java.lang.String).format('%d:%02d', l.durationSeconds/60, l.durationSeconds%60)}">
+								</td>
+								<td th:text="${#numbers.formatDecimal(l.fileSizeBytes / 1048576.0,1,1)+' MB'}"></td>
+								<td><span class="mk-state" th:classappend="${l.status}" th:text="${l.status}"></span>
+								</td>
+								<td th:text="${#temporals.format(l.createdAt,'yyyy.MM.dd')}"></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</main>
+	<th:block th:replace="~{admin/fragments/common :: script}"></th:block>
+</body>
+
+</html>

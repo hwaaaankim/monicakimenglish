@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{admin/fragments/common :: head}"></head>
+
+<body>
+	<th:block th:replace="~{admin/fragments/common :: header}"></th:block>
+	<main class="mk-admin-main">
+		<div class="container-fluid">
+			<div class="mk-admin-title">
+				<div><small>LECTURE DETAIL</small>
+					<h1 th:text="${lecture.title}"></h1>
+				</div>
+				<div class="mk-title-actions"><a class="mk-admin-secondary" href="/admin/lectures">목록</a><a
+						class="mk-admin-primary" th:href="@{/admin/lectures/{id}/edit(id=${lecture.id})}">수정</a></div>
+			</div>
+			<div class="row">
+				<div class="col-xs-12 col-lg-8">
+					<div class="mk-admin-panel">
+						<div class="mk-detail-summary"><span class="mk-state" th:classappend="${lecture.status}"
+								th:text="${lecture.status}"></span><strong
+								th:text="${lecture.pricingType.name()=='FREE' ? '무료' : #numbers.formatInteger(lecture.price,0,'COMMA')+'원'}"></strong><span
+								th:text="${lecture.viewingDays == null ? '무제한 수강' : lecture.viewingDays+'일 수강'}"></span><span
+								th:text="${T(java.lang.String).format('%d분 %02d초', lecture.durationSeconds/60, lecture.durationSeconds%60)}"></span><span
+								th:text="${#numbers.formatDecimal(lecture.fileSizeBytes/1048576.0,1,1)+' MB'}"></span>
+						</div>
+						<div class="mk-admin-tags"><span th:each="t:${tags}" th:text="${'#'+t}"></span></div>
+						<p class="mk-admin-description" th:text="${lecture.description}"></p>
+						<div class="mk-admin-gallery"><img th:each="img:${images}"
+								th:src="@{/media/lectures/{lid}/images/{iid}(lid=${lecture.id},iid=${img.id})}"></div>
+					</div>
+					<div class="mk-admin-panel">
+						<div class="mk-panel-heading">
+							<h2>구매자 / 학습 현황</h2><strong th:text="${purchaseCount+'건 결제'}"></strong>
+						</div>
+						<div class="table-responsive">
+							<table class="table mk-admin-table">
+								<thead>
+									<tr>
+										<th>회원</th>
+										<th>연락처</th>
+										<th>결제일</th>
+										<th>금액</th>
+										<th>진행률</th>
+										<th>누적재생</th>
+										<th>조회수</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="b:${buyers}">
+										<td><a th:href="@{/admin/members/{id}(id=${b.clientId})}"
+												th:text="${b.name+' ('+b.username+')'}"></a></td>
+										<td th:text="${b.phone}"></td>
+										<td th:text="${#temporals.format(b.paidAt,'yyyy.MM.dd HH:mm')}"></td>
+										<td th:text="${#numbers.formatInteger(b.paidAmount,0,'COMMA')+'원'}"></td>
+										<td th:text="${b.progressPercent+'%'}"></td>
+										<td
+											th:text="${T(java.lang.String).format('%d분 %02d초', b.watchedSeconds/60,b.watchedSeconds%60)}">
+										</td>
+										<td th:text="${b.viewCount}"></td>
+									</tr>
+									<tr th:if="${#lists.isEmpty(buyers)}">
+										<td colspan="7" class="text-center">유료 구매 기록이 없습니다.</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="mk-admin-panel">
+						<h2>최근 재생 세션 로그</h2>
+						<div class="table-responsive">
+							<table class="table mk-admin-table">
+								<thead>
+									<tr>
+										<th>회원ID</th>
+										<th>시작</th>
+										<th>종료</th>
+										<th>세션 재생</th>
+										<th>마지막 위치</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="s:${sessions}">
+										<td th:text="${s.client.id}"></td>
+										<td th:text="${#temporals.format(s.startedAt,'yyyy.MM.dd HH:mm:ss')}"></td>
+										<td
+											th:text="${s.endedAt == null ? '-' : #temporals.format(s.endedAt,'yyyy.MM.dd HH:mm:ss')}">
+										</td>
+										<td th:text="${s.watchedSeconds+'초'}"></td>
+										<td th:text="${s.lastPositionSeconds+'초'}"></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+				<div class="col-xs-12 col-lg-4">
+					<div class="mk-admin-panel mk-qr-panel">
+						<h2>강의 QR 코드</h2><img th:src="@{/admin/lectures/{id}/qr.png(id=${lecture.id})}" alt="QR">
+						<p>QR은 강의 상세 URL로 연결됩니다. 실제 영상 재생은 QR과 무관하게 로그인·구매/수강기간 권한을 다시 검사합니다.</p><a target="_blank"
+							th:href="@{/lectures/{id}(id=${lecture.id})}">고객 상세페이지 보기</a>
+					</div>
+					<div class="mk-admin-panel">
+						<h2>첨부자료</h2>
+						<div class="mk-existing-files"><label th:each="a:${attachments}"><span
+									th:text="${a.originalName}"></span><small
+									th:text="${#numbers.formatDecimal(a.fileSizeBytes/1024.0,1,1)+' KB'}"></small></label>
+							<p th:if="${#lists.isEmpty(attachments)}">첨부자료 없음</p>
+						</div>
+					</div>
+					<div class="mk-admin-panel danger">
+						<h2>강의 삭제/보관</h2>
+						<p>구매 및 재생 기록 보존을 위해 물리 삭제하지 않고 ARCHIVED 상태로 변경합니다.</p>
+						<form th:action="@{/admin/lectures/{id}/archive(id=${lecture.id})}" method="post"
+							onsubmit="return confirm('이 강의를 보관 상태로 변경하시겠습니까?')"><button class="mk-admin-danger"
+								type="submit">ARCHIVED로 변경</button></form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</main>
+	<th:block th:replace="~{admin/fragments/common :: script}"></th:block>
+</body>
+
+</html>

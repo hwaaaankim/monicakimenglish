@@ -1,32 +1,36 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments/common :: head}"></head>
+<body class="mk-admin-login-body">
+<div class="mk-admin-login-card">
+    <div class="mk-login-brand">MONICA<span>KIM</span><small>ADMIN</small></div>
+    <h1>관리자 로그인</h1>
+    <p>관리자 전용 페이지입니다.</p>
 
-<head th:replace="/admin/fragments/common :: head">
-</head>
+    <div class="mk-admin-alert error" th:if="${param.error}" th:switch="${param.error[0]}">
+        <span th:case="'credentials'">없는 계정이거나 비밀번호가 올바르지 않습니다.</span>
+        <span th:case="'inactive'">현재 비활성화된 관리자 계정입니다. 계정 상태를 확인해주세요.</span>
+        <span th:case="'system'">로그인 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.</span>
+        <span th:case="*">로그인할 수 없습니다. 아이디, 비밀번호 및 계정 상태를 확인해주세요.</span>
+    </div>
 
-<body>
-	<div id="login-page">
-		<div class="container">
-			<form class="form-login" action="index.html">
-				<h2 class="form-login-heading">로그인하세요</h2>
-				<div class="login-wrap">
-					<input type="text" class="form-control" placeholder="User ID"
-						autofocus> <br> <input type="password" class="form-control" placeholder="Password">
-					<button class="btn btn-theme btn-block" style="margin-top:20px;"
-						type="submit">
-						<i class="fa fa-lock"></i> SIGN IN
-					</button>
-					<hr>
-				</div>
-			</form>
-		</div>
-	</div>
-	<th:block th:replace="/admin/fragments/common :: script"></th:block>
-	<script>
-    $.backstretch("/admin/img/login-bg.jpg", {
-      speed: 500
-    });
-  </script>
+    <div class="mk-admin-alert success" th:if="${param.logout}">
+        로그아웃되었습니다.
+    </div>
+
+    <form th:action="@{/admin/login/process}" method="post">
+        <label>
+            아이디
+            <input name="username" autocomplete="username" required autofocus>
+        </label>
+        <label>
+            비밀번호
+            <input type="password" name="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit">로그인</button>
+    </form>
+</div>
+
+<th:block th:replace="~{admin/fragments/common :: script}"></th:block>
 </body>
-
 </html>

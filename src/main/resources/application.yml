@@ -1,115 +1,94 @@
 spring:
   application:
     name: MonicaKimEnglish
-
   profiles:
     active: test
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+  servlet:
+    multipart:
+      max-file-size: 5000MB
+      max-request-size: 5200MB
+  web:
+    error:
+      whitelabel:
+        enabled: false
+      include-exception: false
+      include-message: never
+      include-path: never
+      include-stacktrace: never
+      include-binding-errors: never
 
 server:
   forward-headers-strategy: framework
   port: 8080
-
   servlet:
     session:
-      timeout: 43200m       # 30일 = 1440m * 30
+      timeout: 43200m
       cookie:
-        max-age: 2592000    # 30일 = 60 * 60 * 24 * 30
+        max-age: 2592000
         name: SID
         http-only: true
+        same-site: lax
 
+app:
+  security:
+    remember-me-key: ${MONICA_REMEMBER_ME_KEY:monicakimenglish}
+  bootstrap-admin:
+    enabled: true
+    token: ${MONICA_BOOTSTRAP_ADMIN_TOKEN:monicakimenglish}
+  storage:
+    root: ./data/files
+    ffmpeg-enabled: true
+    ffmpeg-path: ${MONICA_FFMPEG_PATH:ffmpeg}
+    ffprobe-path: ${MONICA_FFPROBE_PATH:ffprobe}
 
-# =========================================================
-# 개발 환경
-# Eclipse 실행 프로필: test
-# =========================================================
 ---
 spring:
   config:
     activate:
       on-profile: test
-
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mariadb://172.237.20.253:3306/monicakimenglish?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Seoul
-    username: root
-    password: ghksrka3849!
-
-    hikari:
-      connectionTimeout: 30000
-      maximumPoolSize: 10
-      maxLifetime: 1800000
-      poolName: HikariCP
-      readOnly: false
-      connectionTestQuery: SELECT 1
-
-  h2:
-    console:
-      enabled: true
-
+    url: ${MONICA_DB_URL:jdbc:mariadb://172.237.20.253:3306/monicakimenglish?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Seoul}
+    username: ${MONICA_DB_USERNAME:root}
+    password: ${MONICA_DB_PASSWORD:ghksrka3849!}
   jpa:
     database-platform: org.hibernate.dialect.MariaDBDialect
-
   servlet:
     multipart:
       location: D:/MonicaKimEnglish/tmp/
-      max-file-size: 5000MB
-      max-request-size: -1
-
-  upload:
-    path: D:/MonicaKimEnglish/files/
-    env: local
-
+app:
+  storage:
+    root: D:/MonicaKimEnglish/files/
 server:
   servlet:
     session:
       cookie:
         secure: false
 
-
-# =========================================================
-# 배포 환경
-# Ubuntu / Nginx / HTTPS
-# =========================================================
 ---
 spring:
   config:
     activate:
       on-profile: prod
-
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mariadb://127.0.0.1:3306/monicakimenglish?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Seoul
-    username: root
-    password: ghksrka3849!
-
-    hikari:
-      connectionTimeout: 30000
-      maximumPoolSize: 10
-      maxLifetime: 1800000
-      poolName: HikariCP
-      readOnly: false
-      connectionTestQuery: SELECT 1
-
-  h2:
-    console:
-      enabled: true
-
+    url: ${MONICA_DB_URL:jdbc:mariadb://127.0.0.1:3306/monicakimenglish?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Seoul}
+    username: ${MONICA_DB_USERNAME:root}
+    password: ${MONICA_DB_PASSWORD:ghksrka3849!}
   jpa:
     database-platform: org.hibernate.dialect.MariaDBDialect
-
   servlet:
     multipart:
       location: /var/lib/monicakimenglish/tmp/
-      max-file-size: 5000MB
-      max-request-size: -1
-
-  upload:
-    path: /var/lib/monicakimenglish/files/
-    env: prod
-
+app:
+  storage:
+    root: /var/lib/monicakimenglish/files/
 server:
   address: 127.0.0.1
-
   servlet:
     session:
       cookie:

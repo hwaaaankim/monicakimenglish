@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{front/fragments/common :: head(${lecture.title})}"></head>
+<body class="stretched mk-platform-page mk-watch-page">
+<div id="wrapper" class="clearfix">
+<th:block th:replace="~{front/fragments/common :: header}"></th:block>
+
+<main class="mk-watch-main">
+  <div class="container">
+    <div class="mk-watch-heading">
+      <div>
+        <a href="/my/classroom">← 내 강의실</a>
+        <h1 th:text="${lecture.title}">강의 제목</h1>
+      </div>
+      <span th:text="${lecture.viewingDays == null ? '무제한 수강' : '기간제 수강'}">수강</span>
+    </div>
+
+    <section class="mk-video-shell mk-secure-player"
+      id="secureLecturePlayer"
+      th:attr="data-lecture-id=${lecture.id},data-watermark=${playerWatermark}">
+
+      <video id="lecturePlayer"
+        playsinline
+        preload="metadata"
+        tabindex="-1"
+        controlsList="nodownload noremoteplayback"
+        disablePictureInPicture
+        disableRemotePlayback
+        x-webkit-airplay="deny"
+        th:poster="${posterImageId == null ? null : '/media/lectures/' + lecture.id + '/images/' + posterImageId}">
+        이 브라우저는 HTML5 영상을 지원하지 않습니다.
+      </video>
+
+      <div class="mk-player-watermark" id="playerWatermark" aria-hidden="true"></div>
+
+      <div class="mk-player-loading is-visible" id="playerLoading" aria-live="polite">
+        <span class="mk-player-spinner" aria-hidden="true"></span>
+        <strong>안전한 재생 연결을 준비하고 있습니다.</strong>
+      </div>
+
+      <div class="mk-player-error" id="playerError" hidden>
+        <strong id="playerErrorTitle">영상을 재생할 수 없습니다.</strong>
+        <p id="playerErrorMessage">잠시 후 다시 시도해 주세요.</p>
+        <button type="button" id="playerRetryBtn">다시 연결</button>
+      </div>
+
+      <button type="button" class="mk-player-center-play" id="playerCenterPlay" aria-label="재생">
+        <span aria-hidden="true">▶</span>
+      </button>
+
+      <div class="mk-player-controls" id="playerControls">
+        <div class="mk-player-seek-wrap">
+          <div class="mk-player-bookmark-markers" id="playerBookmarkMarkers" aria-hidden="true"></div>
+          <div class="mk-player-seek-tooltip" id="playerSeekTooltip" aria-hidden="true">0:00</div>
+          <input type="range" id="playerSeek" min="0" max="1000" value="0" step="1" aria-label="재생 위치">
+          <div class="mk-player-seek-buffer" id="playerSeekBuffer" aria-hidden="true"></div>
+        </div>
+
+        <div class="mk-player-toolbar">
+          <button type="button" class="mk-player-icon-btn" id="playerPlayBtn" aria-label="재생">
+            <span id="playerPlayIcon" aria-hidden="true">▶</span>
+          </button>
+          <button type="button" class="mk-player-skip-btn" id="playerBackBtn" aria-label="10초 뒤로">−10</button>
+          <button type="button" class="mk-player-skip-btn" id="playerForwardBtn" aria-label="10초 앞으로">+10</button>
+
+          <div class="mk-player-time" aria-label="재생 시간">
+            <span id="playerCurrentTime">0:00</span>
+            <span>/</span>
+            <span id="playerDuration">0:00</span>
+          </div>
+
+          <div class="mk-player-volume-group">
+            <button type="button" class="mk-player-icon-btn" id="playerMuteBtn" aria-label="음소거">
+              <span id="playerMuteIcon" aria-hidden="true">VOL</span>
+            </button>
+            <input type="range" id="playerVolume" min="0" max="1" value="1" step="0.05" aria-label="볼륨">
+          </div>
+
+          <div class="mk-player-toolbar-spacer"></div>
+
+          <button type="button" class="mk-player-text-btn mk-player-bookmark-add-btn" id="playerBookmarkAddBtn" aria-label="현재 위치 책갈피 추가">
+            + 책갈피
+          </button>
+
+          <div class="mk-player-popover-wrap">
+            <button type="button" class="mk-player-text-btn" id="playerBookmarkListBtn"
+              aria-label="책갈피 목록" aria-haspopup="true" aria-expanded="false">
+              책갈피 <span id="playerBookmarkCount">0</span>
+            </button>
+            <div class="mk-player-popover mk-player-bookmark-popover" id="playerBookmarkPanel" hidden>
+              <div class="mk-player-popover-head">
+                <strong>내 책갈피</strong>
+                <small>이 브라우저에 저장됩니다.</small>
+              </div>
+              <div class="mk-player-bookmark-list" id="playerBookmarkList"></div>
+              <div class="mk-player-bookmark-empty" id="playerBookmarkEmpty">저장한 책갈피가 없습니다.</div>
+            </div>
+          </div>
+
+          <div class="mk-player-popover-wrap">
+            <button type="button" class="mk-player-text-btn" id="playerSpeedBtn"
+              aria-label="재생 속도" aria-haspopup="true" aria-expanded="false">1×</button>
+            <div class="mk-player-popover mk-player-speed-popover" id="playerSpeedMenu" hidden>
+              <button type="button" data-player-speed="0.5">0.5×</button>
+              <button type="button" data-player-speed="0.75">0.75×</button>
+              <button type="button" data-player-speed="1">1× <span>기본</span></button>
+              <button type="button" data-player-speed="1.25">1.25×</button>
+              <button type="button" data-player-speed="1.5">1.5×</button>
+              <button type="button" data-player-speed="1.75">1.75×</button>
+              <button type="button" data-player-speed="2">2×</button>
+            </div>
+          </div>
+
+          <button type="button" class="mk-player-icon-btn mk-player-fullscreen-btn" id="playerFullscreenBtn" aria-label="전체 화면">
+            <span aria-hidden="true">⛶</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <div class="mk-player-status">
+      <span>학습 진행률</span>
+      <strong id="playerProgress">기록 준비 중</strong>
+    </div>
+
+    <div class="mk-player-help-line" aria-label="플레이어 단축키 안내">
+      <span><b>Space</b> 재생/일시정지</span>
+      <span><b>← →</b> 10초 이동</span>
+      <span><b>M</b> 음소거</span>
+      <span><b>F</b> 전체화면</span>
+      <span><b>B</b> 책갈피 추가</span>
+    </div>
+
+    <div class="row g-3 mt-2">
+      <div class="col-12 col-lg-8">
+        <section class="mk-watch-info">
+          <h2>강의 설명</h2>
+          <div th:text="${lecture.description}"></div>
+        </section>
+      </div>
+      <div class="col-12 col-lg-4">
+        <section class="mk-watch-materials">
+          <h2>첨부 자료</h2>
+          <p th:if="${#lists.isEmpty(attachments)}">등록된 자료가 없습니다.</p>
+          <a th:each="a:${attachments}"
+            th:href="@{/secure-media/lectures/{lid}/attachments/{aid}(lid=${lecture.id},aid=${a.id})}">
+            <i class="icon-download"></i>
+            <span th:text="${a.originalName}"></span>
+          </a>
+        </section>
+      </div>
+    </div>
+  </div>
+</main>
+
+<th:block th:replace="~{front/fragments/common :: footer}"></th:block>
+</div>
+<th:block th:replace="~{front/fragments/common :: script}"></th:block>
+<script src="/front/js/player.js?v=20260824-5"></script>
+</body>
+</html>
