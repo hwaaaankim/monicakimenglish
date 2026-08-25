@@ -143,3 +143,20 @@ body.mk-popup-editor-open{overflow:hidden!important}
   .mk-popup-current-preview{width:min(100%,240px)}
   .mk-popup-editor-footer button{flex:1;min-width:0}
 }
+/* Native file inputs are implementation-only. Keep them hidden even if a global/admin input rule overrides the HTML hidden attribute. */
+.mk-popup-admin-page .mk-popup-native-file-input,
+.mk-popup-admin-page input.mk-popup-native-file-input[hidden]{
+    display:none!important;
+    position:absolute!important;
+    width:0!important;
+    height:0!important;
+    min-width:0!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    opacity:0!important;
+    overflow:hidden!important;
+    pointer-events:none!important;
+}
+
