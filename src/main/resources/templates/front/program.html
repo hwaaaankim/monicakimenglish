@@ -5,7 +5,7 @@
 
 </head>
 
-<body class="stretched">
+<body class="stretched program-page">
     <div id="wrapper" class="clearfix">
 
         <th:block th:replace="front/fragments/common :: header"></th:block>
@@ -295,6 +295,47 @@
        <th:block th:replace="front/fragments/common :: footer"></th:block>
     </div>
     <th:block th:replace="front/fragments/common :: script"></th:block>
+
+    <script>
+        (function ($) {
+            "use strict";
+
+            const $programTabs = $(".programs-tabs");
+            const $bookCarousel = $("#oc-products");
+
+            if (!$programTabs.length || !$bookCarousel.length) {
+                return;
+            }
+
+            function refreshBookCarousel() {
+                if (!$bookCarousel.hasClass("owl-loaded")) {
+                    return;
+                }
+
+                /*
+                 * 교재 탭은 최초 화면에서 display:none 상태이므로 Owl Carousel이
+                 * 초기화 시 실제 폭을 계산하지 못할 수 있습니다. 탭이 보인 직후
+                 * 현재 컨테이너 폭으로 다시 계산하여 stage가 문서 폭을 밀어내지
+                 * 않도록 합니다.
+                 */
+                window.requestAnimationFrame(function () {
+                    $bookCarousel.trigger("refresh.owl.carousel");
+                });
+            }
+
+            $programTabs.on("tabsactivate.programBookCarousel", function (event, ui) {
+                if (ui.newPanel && ui.newPanel.attr("id") === "tabs-34") {
+                    refreshBookCarousel();
+                }
+            });
+
+            $(window).on("load.programBookCarousel", function () {
+                if ($("#tabs-34").is(":visible")) {
+                    refreshBookCarousel();
+                }
+            });
+        })(jQuery);
+    </script>
 
 
 </body>
