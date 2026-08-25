@@ -3015,3 +3015,350 @@ body.mk-modal-open {
     right: -46px;
   }
 }
+
+/* =========================================================
+ * 2026-08-25 responsive header / content rhythm upgrade
+ * - Mobile authentication lives inside the hamburger menu.
+ * - Platform pages no longer add a second header-sized top gap.
+ * ========================================================= */
+.mk-mobile-only {
+  display: none !important;
+}
+
+/* The header itself already occupies its own height (header clone on desktop,
+   normal document flow on mobile). Platform contents therefore only need a
+   comfortable section gap, not another 100~150px header offset. */
+.mk-auth-section {
+  padding-top: 52px;
+}
+
+.mk-catalog-hero {
+  padding-top: 48px;
+}
+
+.mk-detail-page,
+.mk-my-page {
+  padding-top: 44px;
+}
+
+.mk-watch-main {
+  padding-top: 36px;
+}
+
+@media (max-width: 991.98px) {
+  /* Keep logo and hamburger on one clean row. The old auth block was the
+     element that wrapped to a second row and made the mobile header look tall. */
+  #header #header-wrap > .container {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  #header .header-row {
+    min-height: 88px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  #header #logo img {
+    height: 88px;
+  }
+
+  #header #primary-menu-trigger {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+    margin-left: auto;
+  }
+
+  #header #primary-menu-trigger .svg-trigger {
+    width: 27px;
+    height: 27px;
+  }
+
+  /* Desktop login/user controls must never occupy a second mobile row. */
+  .mk-auth-nav {
+    display: none !important;
+  }
+
+  .mk-mobile-only {
+    display: block !important;
+  }
+
+  #header .primary-menu {
+    flex: 0 0 100%;
+    width: 100%;
+  }
+
+  #header .primary-menu .menu-container {
+    margin-top: 0;
+    padding: 5px 0 13px;
+    border-top: 1px solid rgba(63, 49, 25, .10);
+    background: #fff;
+  }
+
+  #header .primary-menu .menu-item {
+    border-top-color: rgba(63, 49, 25, .08);
+  }
+
+  #header .primary-menu .menu-link {
+    padding: 13px 4px;
+    color: #302d27;
+    font-size: 14px;
+    letter-spacing: .025em;
+    line-height: 1.35;
+  }
+
+  #header .primary-menu .menu-link:hover,
+  #header .primary-menu .menu-link:focus-visible {
+    color: var(--mk-gold);
+  }
+
+  /* Login / sign-up use the exact same visual language as the other menu rows. */
+  #header .mk-mobile-auth-item .menu-link {
+    font-weight: 750;
+  }
+
+  #header .mk-mobile-auth-item + .mk-mobile-auth-item {
+    border-top: 1px solid rgba(63, 49, 25, .08);
+  }
+
+  /* Logged-in greeting row: same visual language as the normal mobile menu.
+     Only a single divider separates the account area from the main navigation. */
+  #header .mk-mobile-user-item {
+    border-top: 0;
+    border-bottom: 1px solid rgba(123, 93, 39, .24);
+    margin-bottom: 0;
+    background: transparent;
+  }
+
+  /* Prevent a double line: the account divider above is the only separator. */
+  #header .mk-mobile-user-item + .menu-item {
+    border-top: 0;
+  }
+
+  #header .mk-mobile-user-toggle {
+    position: relative;
+    display: block;
+    width: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 13px 4px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #302d27;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: .025em;
+    line-height: 1.35;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  #header .mk-mobile-user-greeting {
+    display: block;
+    min-width: 0;
+    padding-right: 34px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Match Canvas' generated .sub-menu-trigger exactly on mobile. */
+  #header .mk-mobile-user-toggle i {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    width: 32px;
+    height: 32px;
+    margin: 0;
+    color: #000;
+    font-size: 12px;
+    line-height: 32px;
+    text-align: center;
+    transform: translateY(-50%) rotate(0deg);
+    transition: transform .3s ease, color .2s ease;
+  }
+
+  #header .mk-mobile-user-toggle:hover,
+  #header .mk-mobile-user-toggle:focus-visible {
+    color: var(--mk-gold);
+    outline: none;
+  }
+
+  #header .mk-mobile-user-toggle:hover i,
+  #header .mk-mobile-user-toggle:focus-visible i {
+    color: currentColor;
+  }
+
+  #header .mk-mobile-user-item.open .mk-mobile-user-toggle i {
+    transform: translateY(-50%) rotate(90deg);
+  }
+
+  #header .mk-mobile-user-submenu {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition: max-height .3s var(--mk-ease), opacity .2s ease, transform .25s var(--mk-ease), visibility 0s linear .3s;
+  }
+
+  #header .mk-mobile-user-item.open .mk-mobile-user-submenu {
+    max-height: 290px;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+    transition-delay: 0s;
+  }
+
+  #header .mk-mobile-user-submenu > a,
+  #header .mk-mobile-user-submenu form > button {
+    position: relative;
+    width: 100%;
+    min-height: 43px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin: 0;
+    padding: 0 26px 0 16px;
+    border: 0;
+    border-top: 1px solid rgba(63, 49, 25, .065);
+    border-radius: 0;
+    background: rgba(255, 255, 255, .78);
+    color: #595247;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  #header .mk-mobile-user-submenu > a::after,
+  #header .mk-mobile-user-submenu form > button::after {
+    content: "›";
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    color: rgba(123, 93, 39, .72);
+    font-size: 17px;
+    transform: translateY(-50%);
+  }
+
+  #header .mk-mobile-user-submenu > a:hover,
+  #header .mk-mobile-user-submenu > a:focus-visible,
+  #header .mk-mobile-user-submenu form > button:hover,
+  #header .mk-mobile-user-submenu form > button:focus-visible {
+    background: rgba(247, 242, 232, .82);
+    color: var(--mk-gold-dark);
+    outline: none;
+  }
+
+  #header .mk-mobile-user-submenu form {
+    margin: 0;
+  }
+
+  /* Header is already in normal flow on <=991px. Remove the old duplicated offsets. */
+  .mk-auth-section {
+    padding: 28px 0 50px;
+    min-height: auto;
+  }
+
+  .mk-catalog-hero {
+    padding: 30px 0 30px;
+  }
+
+  .mk-detail-page,
+  .mk-my-page {
+    padding: 28px 0 54px;
+  }
+
+  .mk-watch-main {
+    padding: 24px 0 50px;
+  }
+}
+
+@media (max-width: 767.98px) {
+  #header #header-wrap > .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  #header .header-row {
+    min-height: 84px;
+  }
+
+  #header #logo img {
+    height: 84px;
+  }
+
+  #header .primary-menu .menu-container {
+    padding-bottom: 10px;
+  }
+
+  .mk-catalog-hero::after {
+    width: 230px;
+    height: 230px;
+    right: -120px;
+    top: 18px;
+    opacity: .6;
+  }
+
+  .mk-catalog-hero h1 {
+    font-size: clamp(28px, 8vw, 34px);
+    line-height: 1.28;
+    word-break: keep-all;
+  }
+
+  .mk-catalog-hero p,
+  .mk-page-title p,
+  .mk-auth-heading p {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    text-wrap: pretty;
+  }
+
+  .mk-page-title {
+    margin-bottom: 18px;
+  }
+
+  .mk-page-title h1,
+  .mk-auth-heading h1,
+  .mk-watch-heading h1,
+  .mk-purchase-panel h1,
+  .mk-section-heading h2 {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    text-wrap: balance;
+  }
+
+  .mk-watch-heading {
+    margin-bottom: 11px;
+  }
+}
+
+@media (max-width: 420px) {
+  #header #header-wrap > .container {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  #header .header-row {
+    min-height: 80px;
+  }
+
+  #header #logo img {
+    height: 80px;
+  }
+
+  #header .primary-menu .menu-link,
+  #header .mk-mobile-user-toggle {
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+}

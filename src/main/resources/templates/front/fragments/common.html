@@ -22,7 +22,7 @@
 	<link rel="stylesheet" href="/front/css/magnific-popup.css" type="text/css" />
 
 	<link rel="stylesheet" href="/front/css/custom.css" type="text/css" />
-	<link rel="stylesheet" href="/front/css/course-platform.css?v=20260824-5" type="text/css" />
+	<link rel="stylesheet" href="/front/css/course-platform.css?v=20260825-1" type="text/css" />
 	<meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}" />
 	<meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -31,7 +31,7 @@
 	<link rel="stylesheet" type="text/css" href="/front/include/rs-plugin/css/layers.css">
 	<link rel="stylesheet" type="text/css" href="/front/include/rs-plugin/css/navigation.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css" />
-	<link rel="stylesheet" href="/front/detail.css">
+	<link rel="stylesheet" href="/front/detail.css?v=20260825-1">
 	<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 	<title th:text="${title}">MonicaKim English</title>
 
@@ -66,6 +66,33 @@
 							</div>
 							<nav class="primary-menu">
 								<ul class="menu-container">
+									<!-- 모바일 인증 메뉴: 헤더 우측에 별도 버튼을 두지 않고 햄버거 메뉴 최상단에서 동일한 메뉴 스타일로 제공합니다. -->
+									<li th:if="${currentUser == null}" class="menu-item mk-mobile-only mk-mobile-auth-item">
+										<a class="menu-link" href="/auth/login"><div>로그인</div></a>
+									</li>
+									<li th:if="${currentUser == null}" class="menu-item mk-mobile-only mk-mobile-auth-item">
+										<a class="menu-link" href="/auth/signup"><div>회원가입</div></a>
+									</li>
+
+									<li th:if="${currentUser != null and currentUser.role == 'CLIENT'}"
+										class="menu-item mk-mobile-only mk-mobile-user-item" data-mobile-user-menu>
+										<button type="button" class="mk-mobile-user-toggle" aria-expanded="false"
+											aria-controls="mk-mobile-user-submenu">
+											<span class="mk-mobile-user-greeting"
+												th:text="${currentUser.displayName + '님 안녕하세요'}">회원님 안녕하세요</span>
+											<i class="icon-chevron-right" aria-hidden="true"></i>
+										</button>
+										<div class="mk-mobile-user-submenu" id="mk-mobile-user-submenu" aria-hidden="true">
+											<a href="/my/classroom">영상 강의실</a>
+											<a href="/my/wishlist">찜 목록</a>
+											<a href="/my/payments">결제 내역 확인</a>
+											<a href="/my/profile">개인정보</a>
+											<form th:action="@{/auth/logout}" method="post">
+												<button type="submit">로그아웃</button>
+											</form>
+										</div>
+									</li>
+
 									<li class="menu-item"><a class="menu-link" href="/index">
 											<div>Monica Kim</div>
 										</a>
@@ -264,7 +291,7 @@
 		<script src="/front/gsap.min.js" type="text/javascript"></script>
 		<script src="/front/ScrollTrigger.min.js"></script>
 		<script src="/front/custom.js"></script>
-		<script src="/front/js/platform-common.js?v=20260824-3"></script>
+		<script src="/front/js/platform-common.js?v=20260825-1"></script>
 		<script>
 
 			jQuery(window).on('load', function () {

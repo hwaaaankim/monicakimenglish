@@ -71,10 +71,10 @@ public class LectureService {
         Specification<Lecture> spec = (root, query, cb) -> cb.equal(root.get("status"), LectureStatus.PUBLISHED);
 
         if (q != null && !q.isBlank()) {
-            String like = "%" + q.trim().toLowerCase() + "%";
-            spec = spec.and((root, query, cb) -> cb.or(
-                    cb.like(cb.lower(root.get("title")), like),
-                    cb.like(cb.lower(root.get("description")), like)));
+            String keyword = q.trim();
+            Set<Long> keywordIds = new HashSet<>(lectures.findPublishedIdsByKeyword(keyword));
+            spec = spec.and((root, query, cb) ->
+                    keywordIds.isEmpty() ? cb.disjunction() : root.get("id").in(keywordIds));
         }
 
         if (pricing != null && !pricing.equalsIgnoreCase("ALL")) {

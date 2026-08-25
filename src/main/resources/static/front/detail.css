@@ -721,3 +721,137 @@ strong.sub-title {
     margin: 0px;
   }
 }
+
+/* =========================================================
+ * 2026-08-25 mobile page-title typography
+ * Legacy Monica/Programs/Members/Recruit/Client pages used the theme's
+ * centered mobile title rule and several forced block lines. On a narrow
+ * viewport that produced unnatural Korean line breaks. Keep desktop intact,
+ * but let mobile copy flow as a readable left-aligned paragraph.
+ * ========================================================= */
+@media (max-width: 767.98px) {
+  #page-title {
+    padding: 28px 0 !important;
+    text-align: left !important;
+  }
+
+  #page-title.page-title-parallax.include-header {
+    padding: 34px 0 36px !important;
+    background-attachment: scroll;
+    background-position: center center;
+  }
+
+  #page-title .container,
+  #page-title .title-text {
+    text-align: left !important;
+  }
+
+  #page-title .title-text {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+
+  #page-title .title-text h1 {
+    max-width: 100%;
+    margin: 0 0 18px !important;
+    font-size: clamp(1.52rem, 6.7vw, 1.9rem) !important;
+    font-weight: 600 !important;
+    line-height: 1.42 !important;
+    letter-spacing: -.035em !important;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    text-wrap: balance;
+  }
+
+  /* Desktop keeps the original one-sentence-per-line composition. Mobile
+     turns those spans into one flowing paragraph so the browser can wrap at
+     natural word boundaries instead of at authored desktop break points. */
+  #page-title .title-text > span {
+    display: inline !important;
+    margin: 0 !important;
+    color: rgba(255, 255, 255, .94) !important;
+    font-size: .96rem !important;
+    font-weight: 400 !important;
+    line-height: 1.82 !important;
+    letter-spacing: -.012em;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  #page-title .title-text > span + span::before {
+    content: " ";
+  }
+
+  #page-title .title-text strong.title,
+  #page-title .title-text strong.sub-title {
+    font-size: 1em !important;
+    font-weight: 750 !important;
+  }
+
+  #page-title > .container:not(.title-text) > h1 {
+    font-size: clamp(1.45rem, 6.4vw, 1.8rem) !important;
+    line-height: 1.35 !important;
+    letter-spacing: -.025em !important;
+    word-break: keep-all;
+    text-transform: none;
+  }
+
+  #page-title > .container:not(.title-text) > span {
+    margin-top: 7px;
+    font-size: .95rem;
+    line-height: 1.65;
+    word-break: keep-all;
+  }
+
+  #page-title .breadcrumb {
+    margin-top: 14px !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+  }
+}
+
+@media (max-width: 420px) {
+  #page-title.page-title-parallax.include-header {
+    padding-top: 30px !important;
+    padding-bottom: 32px !important;
+  }
+
+  #page-title .title-text {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+}
+
+
+/* Mobile home hero: keep the Revolution Slider composition, but prevent
+ * narrow-screen captions from inheriting oversized desktop typography or
+ * awkward word breaks. Desktop slider values remain untouched. */
+@media (max-width: 767.98px) {
+  #slider .revo-slider-emphasis-text {
+    width: calc(100vw - 56px) !important;
+    max-width: calc(100vw - 56px) !important;
+    padding: 0 !important;
+    border: 0 !important;
+    font-size: clamp(24px, 6.7vw, 30px) !important;
+    line-height: 1.42 !important;
+    letter-spacing: -.035em !important;
+    text-align: left !important;
+    white-space: normal !important;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    text-wrap: balance;
+  }
+
+  #slider .revo-slider-caps-text {
+    width: calc(100vw - 58px) !important;
+    max-width: calc(100vw - 58px) !important;
+    font-size: clamp(13px, 3.7vw, 15px) !important;
+    line-height: 1.62 !important;
+    letter-spacing: -.01em !important;
+    text-align: left !important;
+    text-transform: none !important;
+    white-space: normal !important;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+}

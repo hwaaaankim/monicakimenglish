@@ -70,14 +70,33 @@ public class MediaController {
             throw new IllegalArgumentException("현재 공개되지 않은 이미지입니다.");
         }
 
-        var img = images.findByIdAndLectureId(imageId, lectureId).orElseThrow();
-        Resource resource = storage.resource(img.getFilePath());
-        MediaType type = detect(img.getFilePath(), MediaType.IMAGE_JPEG);
+        var img = images.findByIdAndLectureId(imageId, lectureId).orElse(null);
+        if (img == null || img.getFilePath() == null || img.getFilePath().isBlank()) {
+            return ResponseEntity.notFound().build();
+        }
 
-        return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(7)))
-                .contentType(type)
-                .body(resource);
+        try {
+            Path path = storage.resolve(img.getFilePath());
+            if (!Files.isRegularFile(path)) {
+                // DB에는 이미지 메타데이터가 남아 있지만 실제 파일이 없는 과거 데이터는
+                // 일반적인 404로 처리합니다. 전역 IllegalArgumentException 핸들러까지 올려
+                // 요청마다 WARN 스택을 남기지 않도록 합니다.
+                log.debug("Lecture image file is missing. lectureId={}, imageId={}, path={}",
+                        lectureId, imageId, img.getFilePath());
+                return ResponseEntity.notFound().build();
+            }
+
+            Resource resource = storage.resource(img.getFilePath());
+            MediaType type = detect(img.getFilePath(), MediaType.IMAGE_JPEG);
+
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(7)))
+                    .contentType(type)
+                    .body(resource);
+        } catch (IllegalArgumentException | SecurityException e) {
+            log.debug("Lecture image cannot be served. lectureId={}, imageId={}", lectureId, imageId, e);
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/secure-media/lectures/{lectureId}/attachments/{attachmentId}")
@@ -87,21 +106,37 @@ public class MediaController {
             Authentication auth) {
 
         access.requireAccess(cid(auth), lectureId);
-        var attachment = attachments.findByIdAndLectureId(attachmentId, lectureId).orElseThrow();
+        var attachment = attachments.findByIdAndLectureId(attachmentId, lectureId).orElse(null);
+        if (attachment == null || attachment.getFilePath() == null || attachment.getFilePath().isBlank()) {
+            return ResponseEntity.notFound().build();
+        }
 
-        return ResponseEntity.ok()
-                .cacheControl(CacheControl.noStore())
-                .header(HttpHeaders.PRAGMA, "no-cache")
-                .contentType(attachment.getContentType() == null
-                        ? MediaType.APPLICATION_OCTET_STREAM
-                        : MediaType.parseMediaType(attachment.getContentType()))
-                .header(
-                        HttpHeaders.CONTENT_DISPOSITION,
-                        ContentDisposition.attachment()
-                                .filename(attachment.getOriginalName(), java.nio.charset.StandardCharsets.UTF_8)
-                                .build()
-                                .toString())
-                .body(storage.resource(attachment.getFilePath()));
+        try {
+            Path path = storage.resolve(attachment.getFilePath());
+            if (!Files.isRegularFile(path)) {
+                log.debug("Lecture attachment file is missing. lectureId={}, attachmentId={}, path={}",
+                        lectureId, attachmentId, attachment.getFilePath());
+                return ResponseEntity.notFound().build();
+            }
+
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.noStore())
+                    .header(HttpHeaders.PRAGMA, "no-cache")
+                    .contentType(attachment.getContentType() == null
+                            ? MediaType.APPLICATION_OCTET_STREAM
+                            : MediaType.parseMediaType(attachment.getContentType()))
+                    .header(
+                            HttpHeaders.CONTENT_DISPOSITION,
+                            ContentDisposition.attachment()
+                                    .filename(attachment.getOriginalName(), java.nio.charset.StandardCharsets.UTF_8)
+                                    .build()
+                                    .toString())
+                    .body(storage.resource(attachment.getFilePath()));
+        } catch (IllegalArgumentException | SecurityException e) {
+            log.debug("Lecture attachment cannot be served. lectureId={}, attachmentId={}",
+                    lectureId, attachmentId, e);
+            return ResponseEntity.notFound().build();
+        }
     }
 
     /**
