@@ -349,7 +349,43 @@
        <th:block th:replace="front/fragments/common :: footer"></th:block>
     </div>
 
+    <div th:if="${homePopups != null and !#lists.isEmpty(homePopups)}" id="mkIndexPopupOverlay"
+         class="mk-index-popup-overlay" hidden aria-hidden="true">
+        <div class="mk-index-popup-dialog" role="dialog" aria-modal="true" aria-label="알림 팝업">
+            <button type="button" class="mk-index-popup-close" data-popup-close aria-label="팝업 닫기">×</button>
+
+            <div class="mk-index-popup-viewport">
+                <div class="mk-index-popup-track">
+                    <article class="mk-index-popup-slide" th:each="popup : ${homePopups}">
+                        <a th:if="${popup.targetUrl != null}" th:href="${popup.targetUrl}" aria-label="팝업 연결 페이지로 이동">
+                            <img th:src="@{/media/popups/{id}(id=${popup.id})}" alt="팝업 이미지">
+                        </a>
+                        <div th:if="${popup.targetUrl == null}">
+                            <img th:src="@{/media/popups/{id}(id=${popup.id})}" alt="팝업 이미지">
+                        </div>
+                    </article>
+                </div>
+
+                <button th:if="${#lists.size(homePopups) > 1}" type="button"
+                        class="mk-index-popup-nav is-prev" data-popup-prev aria-label="이전 팝업">‹</button>
+                <button th:if="${#lists.size(homePopups) > 1}" type="button"
+                        class="mk-index-popup-nav is-next" data-popup-next aria-label="다음 팝업">›</button>
+            </div>
+
+            <div class="mk-index-popup-bottom">
+                <div class="mk-index-popup-dots" th:if="${#lists.size(homePopups) > 1}" aria-label="팝업 페이지">
+                    <button th:each="popup,stat : ${homePopups}" type="button" class="mk-index-popup-dot"
+                            th:classappend="${stat.first ? ' is-active' : ''}"
+                            th:attr="aria-label=${stat.count + '번째 팝업'},aria-current=${stat.first ? 'true' : 'false'}"></button>
+                </div>
+                <div th:if="${#lists.size(homePopups) == 1}"></div>
+                <button type="button" class="mk-index-popup-hide-week" data-popup-hide-week>7일 동안 보지 않기</button>
+            </div>
+        </div>
+    </div>
+
     <th:block th:replace="front/fragments/common :: script"></th:block>
+    <script th:if="${homePopups != null and !#lists.isEmpty(homePopups)}" src="/front/js/index-popup.js?v=20260825-1"></script>
 
 </body>
 

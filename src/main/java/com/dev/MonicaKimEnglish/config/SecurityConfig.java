@@ -133,7 +133,8 @@ public class SecurityConfig {
                     "/lectures",
                     "/lectures/*",
                     "/lectures/*/preview",
-                    "/media/lectures/**"
+                    "/media/lectures/**",
+                    "/media/popups/**"
                 ).permitAll()
                 // 실제 수강/영상/자료는 고객 인증이 필요합니다.
                 .requestMatchers(
