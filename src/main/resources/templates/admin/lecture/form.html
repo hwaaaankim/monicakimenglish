@@ -50,12 +50,13 @@
 								</div>
 								<div class="col-sm-4">
 									<label>가격(원)
-										<input type="number" min="0" step="100" name="price" id="priceInput" th:value="${lecture?.price ?: 0}">
+											<input type="number" min="0" step="1" name="price" id="priceInput" th:value="${lecture?.price ?: 0}">
 									</label>
 								</div>
 								<div class="col-sm-4">
-									<label>시청 가능일 (비우면 무제한)
-										<input type="number" min="1" name="viewingDays" th:value="${lecture?.viewingDays}">
+									<label>시청 가능일
+										<input type="number" min="1" max="36500" name="viewingDays" id="viewingDays" th:value="${lecture?.viewingDays}" placeholder="비우면 무제한">
+										<small>유료 결제 또는 무료 신청 후 수강할 수 있는 일수입니다.</small>
 									</label>
 								</div>
 							</div>
@@ -68,7 +69,7 @@
 								</div>
 								<div class="col-sm-4">
 									<label>공개 상태
-										<select name="status">
+										<select name="status" id="lectureStatus">
 											<option value="DRAFT" th:selected="${lecture == null or lecture.status.name()=='DRAFT'}">임시저장</option>
 											<option value="PUBLISHED" th:selected="${lecture != null and lecture.status.name()=='PUBLISHED'}">공개</option>
 											<option value="ARCHIVED" th:selected="${lecture != null and lecture.status.name()=='ARCHIVED'}">보관</option>
@@ -77,6 +78,37 @@
 								</div>
 							</div>
 						</div>
+
+						<section class="mk-admin-panel mk-lecture-form-panel" id="lectureScheduleSection">
+							<div class="mk-panel-heading mk-lecture-panel-heading"><div><h2>모집 및 강의 일정</h2><p>상시 모집은 두 날짜를 모두 비워두세요. 기간 한정 모집은 시작과 마감을 모두 입력합니다. 날짜와 시간은 대한민국 표준시 기준입니다.</p></div></div>
+							<div class="row mk-equal-control-row">
+								<div class="col-sm-6"><label>모집 시작<input type="datetime-local" name="enrollmentStartsAt" id="enrollmentStartsAt" th:value="${lecture?.enrollmentStartsAt != null ? #temporals.format(lecture.enrollmentStartsAt,'yyyy-MM-dd') + 'T' + #temporals.format(lecture.enrollmentStartsAt,'HH:mm') : ''}"></label></div>
+								<div class="col-sm-6"><label>모집 마감<input type="datetime-local" name="enrollmentEndsAt" id="enrollmentEndsAt" th:value="${lecture?.enrollmentEndsAt != null ? #temporals.format(lecture.enrollmentEndsAt,'yyyy-MM-dd') + 'T' + #temporals.format(lecture.enrollmentEndsAt,'HH:mm') : ''}"></label></div>
+							</div>
+							<label>강의 시작 시점<input type="datetime-local" name="lectureStartsAt" id="lectureStartsAt" th:value="${lecture?.lectureStartsAt != null ? #temporals.format(lecture.lectureStartsAt,'yyyy-MM-dd') + 'T' + #temporals.format(lecture.lectureStartsAt,'HH:mm') : ''}"><small>비우면 신청 후 바로 수강합니다. 미래 날짜이면 그 시점부터 수강할 수 있습니다.</small></label>
+							<div class="mk-schedule-preview" id="schedulePreview" aria-live="polite"></div>
+							<p class="mk-editor-note">이 영상 강의는 모집 인원과 관계없이 진행되며, 신청한 회원은 안내된 수강기간 동안 시청할 수 있습니다.</p>
+							</section>
+
+						<section class="mk-admin-panel mk-lecture-form-panel" id="instructorSection">
+							<div class="mk-panel-heading mk-lecture-panel-heading"><div><h2>강사 소개</h2><p>실명과 약력을 입력하고 이력을 한 줄씩 추가합니다. 공개 시 강사 실명과 이력 1개 이상이 필수입니다.</p></div></div>
+							<label>강사 실명<input name="instructorName" id="instructorName" maxlength="100" th:value="${lecture?.instructorName}" placeholder="실명을 입력해주세요"></label>
+							<label>강사 약력 / 소개<textarea name="instructorBiography" id="instructorBiography" rows="4" maxlength="10000" th:text="${lecture?.instructorBiography}" placeholder="강의 분야와 강사의 경험을 소개해주세요"></textarea></label>
+							<div class="mk-career-heading"><strong>주요 이력</strong><button type="button" class="mk-admin-secondary" id="addInstructorCareer">＋ 이력 추가</button></div>
+							<div id="instructorCareerList" class="mk-career-list">
+								<div class="mk-career-row" th:each="career : ${lecture?.instructorCareers}"><span class="mk-career-number"></span><input name="instructorCareers" maxlength="500" th:value="${career}" aria-label="강사 이력"><div class="mk-career-actions"><button type="button" data-career-action="up" aria-label="이력 위로 이동">↑</button><button type="button" data-career-action="down" aria-label="이력 아래로 이동">↓</button><button type="button" data-career-action="remove" aria-label="이력 삭제">×</button></div></div>
+							</div>
+							<p class="mk-editor-note">이력 5개를 권장합니다. 학력, 자격, 강의 경력 등 실제 확인 가능한 내용을 입력해주세요. 최대 30개까지 추가할 수 있습니다.</p>
+							<div class="mk-panel-heading mk-lecture-panel-heading mk-instructor-photo-heading"><div><h3>강사 사진</h3><p>여러 장을 각각 편집할 수 있습니다. 세로 4:5 · 800×1000px, 첫 사진이 대표 이미지입니다.</p></div><span id="instructorImageCountBadge">총 0장</span></div>
+							<div th:if="${instructorImages != null and !#lists.isEmpty(instructorImages)}" id="existingInstructorImages" class="mk-lecture-image-grid mk-instructor-image-grid">
+								<article th:each="img : ${instructorImages}" class="mk-lecture-image-card" data-existing-instructor-image th:attr="data-image-id=${img.id}"><div class="mk-lecture-image-preview"><img th:src="@{/media/lectures/{lid}/instructor-images/{iid}(lid=${lecture.id},iid=${img.id})}" alt="등록된 강사 사진"><span class="mk-image-origin-badge">기존</span></div><div class="mk-lecture-image-card-body"><strong class="mk-lecture-image-name" th:text="${img.originalName}"></strong><div class="mk-new-image-tools"><button type="button" class="mk-image-card-button" data-existing-instructor-move="up">↑ 앞 순서</button><button type="button" class="mk-image-card-button" data-existing-instructor-move="down">↓ 뒤 순서</button></div><label class="mk-image-check mk-delete-check"><input type="checkbox" name="deleteInstructorImageIds" th:value="${img.id}" data-delete-existing-instructor><span>저장 시 삭제</span></label></div></article>
+							</div>
+							<div class="mk-image-upload-box"><div class="mk-file-picker-row"><label class="mk-file-select-button" for="instructorImagePicker"><i class="fa fa-picture-o"></i><span>강사 사진 선택</span></label><input type="file" id="instructorImagePicker" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp" multiple hidden><div class="mk-file-selected-info" id="instructorImagePickerInfo">여러 사진을 선택하고 각각 편집해주세요.</div></div><div class="mk-image-upload-guide"><i class="fa fa-info-circle"></i><span>자르기 → 4:5 배치 → 대기 목록 확인. 업로드 포함을 선택한 사진만 강의 저장 시 업로드됩니다.</span></div></div>
+							<div id="editedInstructorImageList" class="mk-lecture-image-grid mk-instructor-image-grid mk-new-image-grid"></div>
+							<div id="editedInstructorImageEmpty" class="mk-image-empty-state">새로 편집한 강사 사진이 없습니다.</div>
+							<input type="file" name="instructorImages" id="processedInstructorImages" multiple hidden>
+							<input type="hidden" name="instructorImageOrder" id="instructorImageOrder">
+						</section>
 
 						<div class="mk-admin-panel mk-lecture-form-panel">
 							<div class="mk-panel-heading mk-lecture-panel-heading">
@@ -145,10 +177,11 @@
 											</label>
 											<label class="mk-image-check mk-delete-check">
 												<input type="checkbox" name="deleteImageIds" th:value="${img.id}" data-delete-existing>
-												<span>삭제</span>
+											<span>저장 시 삭제</span>
 											</label>
 										</div>
 									</div>
+									<div class="mk-new-image-tools"><button type="button" class="mk-image-card-button" data-existing-intro-move="up">↑ 앞 순서</button><button type="button" class="mk-image-card-button" data-existing-intro-move="down">↓ 뒤 순서</button></div>
 								</article>
 							</div>
 
@@ -158,7 +191,7 @@
 										<i class="fa fa-picture-o"></i>
 										<span>사진 선택</span>
 									</label>
-									<input type="file" id="introImagePicker" accept="image/*" multiple hidden>
+									<input type="file" id="introImagePicker" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp" multiple hidden>
 									<div class="mk-file-selected-info" id="introImagePickerInfo">이미지 1장 이상 · 여러 장을 한 번에 선택할 수 있습니다.</div>
 								</div>
 								<div class="mk-image-upload-guide">
@@ -172,6 +205,7 @@
 
 							<input type="file" name="introImages" id="processedIntroImages" multiple hidden>
 							<input type="hidden" name="thumbnailSelection" id="thumbnailSelection">
+							<input type="hidden" name="introImageOrder" id="introImageOrder">
 						</div>
 
 						<div class="mk-admin-panel mk-lecture-form-panel">
@@ -208,6 +242,9 @@
 							<h2>등록 체크</h2>
 							<ul class="mk-check-list">
 								<li>영상 제목·설명</li>
+								<li>강사 실명·약력·주요 이력</li>
+								<li>강사 사진 및 순서</li>
+								<li>모집기간·강의 시작 시점</li>
 								<li>무료/유료 및 금액</li>
 								<li>주제 키워드</li>
 								<li>소개 이미지 1장 이상</li>
@@ -245,13 +282,14 @@
 					</div>
 					<div class="mk-editor-step is-disabled" id="cropStepTwoTab">
 						<span>2</span>
-						<strong>16:9 배치</strong>
+						<strong id="placementStepLabel">16:9 배치</strong>
 					</div>
 				</div>
 
 				<p class="mk-editor-guide" id="cropGuide"></p>
 
 				<div id="cropStepOnePanel">
+					<div class="mk-source-toolbar"><div class="mk-source-zoom"><button type="button" class="mk-editor-icon-button" id="sourceZoomOut" aria-label="원본 축소">−</button><input type="range" id="sourceZoomRange" min="50" max="300" step="5" value="100" aria-label="자르기 화면 확대"><button type="button" class="mk-editor-icon-button" id="sourceZoomIn" aria-label="원본 확대">＋</button><span id="sourceZoomValue">100%</span></div><div class="mk-editor-button-row"><button type="button" class="mk-editor-button" id="sourceRotateLeft">↶ 90°</button><button type="button" class="mk-editor-button" id="sourceRotateRight">↷ 90°</button><button type="button" class="mk-editor-button" id="sourceFlipHorizontal">좌우 반전</button><button type="button" class="mk-editor-button" id="sourceFlipVertical">상하 반전</button><button type="button" class="mk-editor-button" id="sourceReset">원본 복원</button></div></div>
 					<div class="mk-crop-source-stage-wrap" id="cropSourceStageWrap">
 						<div class="mk-crop-source-stage" id="cropSourceStage">
 							<img id="cropSourceImage" class="mk-crop-source-image" alt="원본 이미지">
@@ -291,7 +329,7 @@
 							<div class="mk-placement-stage" id="placementStage">
 								<img id="placementImage" class="mk-placement-image" alt="배치 이미지">
 							</div>
-							<div class="mk-placement-size-label">1280 × 720 · 16:9</div>
+							<div class="mk-placement-size-label" id="placementSizeLabel">1280 × 720 · 16:9</div>
 						</div>
 
 						<div class="mk-placement-controls">
@@ -363,7 +401,7 @@
 	</div>
 
 	<th:block th:replace="~{admin/fragments/common :: script}"></th:block>
-	<script src="/admin/js/lecture-editor.js?v=20260824-3"></script>
+	<script src="/admin/js/lecture-editor.js?v=20261013-1"></script>
 </body>
 
 </html>

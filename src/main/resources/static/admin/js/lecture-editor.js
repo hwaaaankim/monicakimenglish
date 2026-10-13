@@ -7,8 +7,8 @@
     return;
   }
 
-  const TARGET_WIDTH = 1280;
-  const TARGET_HEIGHT = 720;
+  let TARGET_WIDTH = 1280;
+  let TARGET_HEIGHT = 720;
   const OUTPUT_TYPE = 'image/jpeg';
   const OUTPUT_QUALITY = 0.94;
 
@@ -29,6 +29,15 @@
   const introImageCountBadge = document.getElementById('introImageCountBadge');
   const thumbnailStatusBadge = document.getElementById('thumbnailStatusBadge');
   const introImageSection = document.getElementById('introImageSection');
+  const instructorPicker = document.getElementById('instructorImagePicker');
+  const instructorPickerInfo = document.getElementById('instructorImagePickerInfo');
+  const instructorProcessedInput = document.getElementById('processedInstructorImages');
+  const instructorImageList = document.getElementById('editedInstructorImageList');
+  const instructorImageEmpty = document.getElementById('editedInstructorImageEmpty');
+  const instructorImageOrderInput = document.getElementById('instructorImageOrder');
+  const introImageOrderInput = document.getElementById('introImageOrder');
+  const sourceZoomRange = document.getElementById('sourceZoomRange');
+  const sourceZoomValue = document.getElementById('sourceZoomValue');
 
   const editorModal = document.getElementById('lectureImageEditorModal');
   const editorTitle = document.getElementById('lectureImageEditorTitle');
@@ -72,6 +81,11 @@
   const cropCancelBtn = document.getElementById('cropCancelBtn');
 
   let processedImages = [];
+  let instructorProcessedImages = [];
+  let activeImageKind = 'intro';
+  let editingSnapshot = null;
+  let editorReturnFocus = null;
+  let editorReading = false;
   let nextProcessedUid = 1;
   let thumbnailKey = null;
   let thumbnailAutomatic = false;
@@ -87,7 +101,10 @@
       return;
     }
     const free = pricing.value === 'FREE';
+    price.min = free ? '0' : '100';
     price.disabled = free;
+    price.required = !free;
+    price.min = free ? '0' : '1';
     if (free) {
       price.value = '0';
     }
@@ -187,7 +204,7 @@
   }
 
   function buildOutputFileName(originalName) {
-    return 'intro-' + safeBaseName(originalName) + '-' + TARGET_WIDTH + 'x' + TARGET_HEIGHT + '-' + Date.now() + '.jpg';
+    return activeImageKind + '-' + safeBaseName(originalName) + '-' + TARGET_WIDTH + 'x' + TARGET_HEIGHT + '-' + Date.now() + '.jpg';
   }
 
   function getExistingCards() {
@@ -212,7 +229,7 @@
   function getActiveImageKeys() {
     const keys = getActiveExistingCards().map(existingKey);
     processedImages.forEach(function (item) {
-      keys.push(getProcessedKey(item));
+      if (item.upload !== false) keys.push(getProcessedKey(item));
     });
     return keys;
   }
@@ -226,7 +243,7 @@
     }
     if (thumbnailKey.indexOf('new:') === 0) {
       const uid = Number(thumbnailKey.substring(4));
-      const index = processedImages.findIndex(function (item) { return item.uid === uid; });
+      const index = processedImages.filter(function (item) { return item.upload !== false; }).findIndex(function (item) { return item.uid === uid; });
       return index >= 0 ? 'new:' + index : '';
     }
     return '';
@@ -314,6 +331,7 @@
     if (thumbnailSelectionInput) {
       thumbnailSelectionInput.value = toServerThumbnailSelection();
     }
+    syncGalleryOrder();
   }
 
   function chooseThumbnail(key, checked) {
@@ -363,7 +381,7 @@
     }
     const transfer = new DataTransfer();
     processedImages.forEach(function (item) {
-      transfer.items.add(item.file);
+      if (item.upload !== false) transfer.items.add(item.file);
     });
     processedInput.files = transfer.files;
   }
@@ -389,12 +407,13 @@
     }
 
     editedImageList.innerHTML = '';
-    processedImages.forEach(function (item) {
+    processedImages.forEach(function (item, index) {
       const key = getProcessedKey(item);
       const card = document.createElement('article');
       card.className = 'mk-lecture-image-card';
       card.setAttribute('data-new-image', 'true');
       card.setAttribute('data-new-uid', String(item.uid));
+      card.classList.toggle('is-upload-excluded', item.upload === false);
 
       const preview = document.createElement('div');
       preview.className = 'mk-lecture-image-preview';
@@ -429,6 +448,13 @@
         createIconButton('fa fa-pencil', '다시 편집', 'edit', item.uid),
         createIconButton('fa fa-trash-o', '제거', 'remove', item.uid)
       );
+      const orderTools = document.createElement('div');
+      orderTools.className = 'mk-new-image-tools';
+      const up = createIconButton('fa fa-arrow-up', '앞 순서', 'up', item.uid);
+      const down = createIconButton('fa fa-arrow-down', '뒤 순서', 'down', item.uid);
+      up.disabled = index === 0;
+      down.disabled = index === processedImages.length - 1;
+      orderTools.append(up, down);
 
       const actions = document.createElement('div');
       actions.className = 'mk-lecture-image-card-actions';
@@ -443,9 +469,9 @@
       const thumbnailText = document.createElement('span');
       thumbnailText.textContent = '썸네일';
       thumbnailLabel.append(thumbnailInput, thumbnailText);
-      actions.append(thumbnailLabel);
+      actions.append(thumbnailLabel, createUploadChoice(item));
 
-      body.append(name, tools, actions);
+      body.append(name, tools, orderTools, actions);
       card.append(preview, body);
       editedImageList.append(card);
     });
@@ -459,6 +485,14 @@
 
   if (editedImageList) {
     editedImageList.addEventListener('change', function (event) {
+      const uploadChoice = event.target.closest('[data-upload-uid]');
+      if (uploadChoice) {
+        const item = processedImages.find(function (entry) { return entry.uid === Number(uploadChoice.dataset.uploadUid); });
+        if (item) item.upload = uploadChoice.checked;
+        syncProcessedInput();
+        renderProcessedImages();
+        return;
+      }
       const choice = event.target.closest('[data-thumbnail-choice]');
       if (!choice) {
         return;
@@ -496,10 +530,16 @@
             : '이미지 1장 이상 · 여러 장을 한 번에 선택할 수 있습니다.';
         }
       } else if (button.getAttribute('data-action') === 'edit') {
+        setActiveImageKind('intro');
         pendingQueue = [];
         pendingQueueIndex = 0;
         editingProcessedUid = uid;
+        editingSnapshot = item.snapshot || null;
         openCropEditor(item.sourceFile, '다시 편집');
+      } else if (button.getAttribute('data-action') === 'up' || button.getAttribute('data-action') === 'down') {
+        moveProcessedImage(processedImages, uid, button.getAttribute('data-action'));
+        syncProcessedInput();
+        renderProcessedImages();
       }
     });
   }
@@ -508,18 +548,26 @@
     if (!editorModal) {
       return;
     }
+    if (!editorModal.classList.contains('is-open')) editorReturnFocus = document.activeElement;
     editorModal.classList.add('is-open');
     editorModal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('mk-image-editor-open');
+    const background = document.querySelector('main');
+    if (background) background.inert = true;
+    requestAnimationFrame(function () { editorModal.classList.add('is-visible'); editorClose.focus(); });
   }
 
   function hideEditorModal() {
     if (!editorModal) {
       return;
     }
-    editorModal.classList.remove('is-open');
+    editorModal.classList.remove('is-visible');
+    setTimeout(function () { if (editorModal.getAttribute('aria-hidden') === 'true') editorModal.classList.remove('is-open'); }, 220);
     editorModal.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('mk-image-editor-open');
+    const background = document.querySelector('main');
+    if (background) background.inert = false;
+    if (editorReturnFocus && document.contains(editorReturnFocus)) editorReturnFocus.focus();
   }
 
   function setCropEditorStep(step) {
@@ -541,7 +589,7 @@
 
     cropGuide.textContent = isStepOne
       ? '1단계: 원본 ' + cropState.naturalWidth + '×' + cropState.naturalHeight + 'px에서 사용할 영역을 자릅니다. 테두리·모서리를 드래그하거나 X·Y·너비·높이를 픽셀 단위로 입력할 수 있습니다.'
-      : '2단계: 잘라낸 이미지를 ' + TARGET_WIDTH + '×' + TARGET_HEIGHT + 'px(16:9) 안에 배치합니다. 드래그, 정렬, 확대/축소, 수치 입력과 배경색을 이용해 최종 화면을 정확히 맞춰주세요.';
+      : '2단계: 잘라낸 이미지를 ' + TARGET_WIDTH + '×' + TARGET_HEIGHT + 'px(' + (activeImageKind === 'instructor' ? '4:5' : '16:9') + ') 안에 배치합니다. 드래그, 정렬, 확대/축소, 수치 입력과 배경색을 이용해 최종 화면을 정확히 맞춰주세요.';
 
     if (isStepOne) {
       requestAnimationFrame(function () {
@@ -563,13 +611,27 @@
       return;
     }
 
+    editorReading = true;
+    const kindWhenReading = activeImageKind;
     const reader = new FileReader();
     reader.onload = function (event) {
       const image = new Image();
       image.onload = function () {
+        editorReading = false;
+        if (activeImageKind !== kindWhenReading) return;
+        if (image.naturalWidth * image.naturalHeight > 40000000) {
+          alert('원본 이미지가 너무 큽니다. 4,000만 화소 이하 이미지로 줄인 뒤 선택해주세요.');
+          skipFailedImage();
+          return;
+        }
         cropState = {
           sourceFile: file,
+          originalImage: image,
           image: image,
+          rotation: 0,
+          flipX: false,
+          flipY: false,
+          sourceZoom: 1,
           naturalWidth: image.naturalWidth,
           naturalHeight: image.naturalHeight,
           step: 1,
@@ -596,9 +658,9 @@
           }
         };
 
-        let progressLabel = customLabel || '소개 이미지 편집';
+        let progressLabel = customLabel || (activeImageKind === 'instructor' ? '강사 사진 편집' : '소개 이미지 편집');
         if (pendingQueue.length > 0 && editingProcessedUid === null) {
-          progressLabel = '소개 이미지 편집 ' + (pendingQueueIndex + 1) + '/' + pendingQueue.length;
+          progressLabel += ' ' + (pendingQueueIndex + 1) + '/' + pendingQueue.length;
         }
         editorTitle.textContent = progressLabel + ' · ' + file.name;
         cropSourceImage.src = image.src;
@@ -607,6 +669,15 @@
         cropDrawAreaBtn.classList.remove('is-active');
         cropSourceStage.classList.remove('is-draw-mode');
         cropSelectBtn.disabled = false;
+        sourceZoomRange.value = '100';
+        sourceZoomValue.textContent = '100%';
+        if (editingSnapshot) {
+          cropState.rotation = editingSnapshot.rotation || 0;
+          cropState.flipX = Boolean(editingSnapshot.flipX);
+          cropState.flipY = Boolean(editingSnapshot.flipY);
+          transformOriginalImage(false);
+          cropState.crop = Object.assign({}, editingSnapshot.crop);
+        }
 
         showEditorModal();
         setTimeout(function () {
@@ -615,13 +686,17 @@
       };
 
       image.onerror = function () {
+        editorReading = false;
         alert('이미지를 불러오지 못했습니다. 다른 이미지 파일을 선택해주세요.');
+        skipFailedImage();
       };
       image.src = event.target.result;
     };
 
     reader.onerror = function () {
+      editorReading = false;
       alert('이미지 파일을 읽지 못했습니다.');
+      skipFailedImage();
     };
     reader.readAsDataURL(file);
   }
@@ -642,6 +717,7 @@
       pendingQueue = [];
       pendingQueueIndex = 0;
       editingProcessedUid = null;
+      editingSnapshot = null;
     }
   }
 
@@ -657,7 +733,7 @@
       availableHeight / cropState.naturalHeight
     );
 
-    cropState.sourceDisplayScale = Math.max(scale, 0.0001);
+    cropState.sourceDisplayScale = Math.max(scale * cropState.sourceZoom, 0.0001);
     cropSourceStage.style.width = (cropState.naturalWidth * cropState.sourceDisplayScale) + 'px';
     cropSourceStage.style.height = (cropState.naturalHeight * cropState.sourceDisplayScale) + 'px';
   }
@@ -890,6 +966,13 @@
     cropState.placement.previewUrl = previewCanvas.toDataURL('image/png');
     placementImage.src = cropState.placement.previewUrl;
     setPlacementSizeMode('contain');
+    if (editingSnapshot && JSON.stringify(editingSnapshot.crop) === JSON.stringify(cropState.crop)) {
+      Object.assign(cropState.placement, editingSnapshot.placement);
+      placementBackgroundColor.value = cropState.placement.backgroundColor;
+      placementBackgroundHex.value = cropState.placement.backgroundColor;
+      renderPlacement();
+    }
+    editingSnapshot = null;
   }
 
   function normalizePlacement() {
@@ -1100,7 +1183,14 @@
     }
 
     const currentState = cropState;
+    const kindBeingSaved = activeImageKind;
+    const savedWidth = TARGET_WIDTH;
+    const savedHeight = TARGET_HEIGHT;
+    const savedUid = editingProcessedUid;
     cropSelectBtn.disabled = true;
+    editorModal.setAttribute('aria-busy', 'true');
+    cropCancelBtn.disabled = true;
+    editorClose.disabled = true;
 
     const canvas = document.createElement('canvas');
     canvas.width = TARGET_WIDTH;
@@ -1126,6 +1216,9 @@
     );
 
     canvas.toBlob(function (blob) {
+      editorModal.removeAttribute('aria-busy');
+      cropCancelBtn.disabled = false;
+      editorClose.disabled = false;
       if (!blob) {
         cropSelectBtn.disabled = false;
         alert('이미지 처리에 실패했습니다. 다시 시도해주세요.');
@@ -1137,9 +1230,21 @@
         lastModified: Date.now()
       });
       const previewUrl = URL.createObjectURL(blob);
+      const gallery = kindBeingSaved === 'instructor' ? instructorProcessedImages : processedImages;
+      const snapshot = {
+        rotation: currentState.rotation,
+        flipX: currentState.flipX,
+        flipY: currentState.flipY,
+        crop: Object.assign({}, currentState.crop),
+        placement: {
+          x: placement.x, y: placement.y, width: placement.width, height: placement.height,
+          containWidth: placement.containWidth, containHeight: placement.containHeight,
+          zoomPercent: placement.zoomPercent, backgroundColor: placement.backgroundColor
+        }
+      };
 
-      if (editingProcessedUid !== null) {
-        const item = processedImages.find(function (image) { return image.uid === editingProcessedUid; });
+      if (savedUid !== null) {
+        const item = gallery.find(function (image) { return image.uid === savedUid; });
         if (item) {
           if (item.previewUrl) {
             URL.revokeObjectURL(item.previewUrl);
@@ -1148,20 +1253,27 @@
           item.previewUrl = previewUrl;
           item.sourceFile = currentState.sourceFile;
           item.originalName = currentState.sourceFile.name;
+          item.snapshot = snapshot;
         }
         editingProcessedUid = null;
       } else {
-        processedImages.push({
+        gallery.push({
           uid: nextProcessedUid++,
           file: outputFile,
           previewUrl: previewUrl,
           sourceFile: currentState.sourceFile,
-          originalName: currentState.sourceFile.name
+          originalName: currentState.sourceFile.name,
+          upload: true,
+          snapshot: snapshot,
+          width: savedWidth,
+          height: savedHeight
         });
       }
 
       syncProcessedInput();
       renderProcessedImages();
+      syncInstructorImages();
+      renderInstructorImages();
 
       if (pendingQueue.length > 0 && pendingQueueIndex + 1 < pendingQueue.length) {
         pendingQueueIndex += 1;
@@ -1170,8 +1282,9 @@
         return;
       }
 
-      if (pickerInfo) {
-        pickerInfo.textContent = '새 이미지 ' + processedImages.length + '장 편집 완료 · 사진 선택으로 더 추가할 수 있습니다.';
+      const activeInfo = kindBeingSaved === 'instructor' ? instructorPickerInfo : pickerInfo;
+      if (activeInfo) {
+        activeInfo.textContent = '새 이미지 ' + gallery.length + '장 편집 완료 · 업로드 포함 항목만 저장됩니다.';
       }
       pendingQueue = [];
       pendingQueueIndex = 0;
@@ -1294,31 +1407,31 @@
 
   if (picker) {
     picker.addEventListener('change', function () {
-      const files = Array.from(picker.files || []);
-      picker.value = '';
-      if (files.length === 0) {
-        return;
-      }
-
-      const invalid = files.filter(function (file) {
-        return !file.type || file.type.indexOf('image/') !== 0;
-      });
-      if (invalid.length > 0) {
-        alert('이미지 파일만 선택해주세요.\n확인 필요: ' + invalid.map(function (file) { return file.name; }).join(', '));
-        return;
-      }
-
-      pendingQueue = files;
-      pendingQueueIndex = 0;
-      editingProcessedUid = null;
-      if (pickerInfo) {
-        pickerInfo.textContent = files.length + '개 이미지 편집 진행 중 · 각 이미지를 자르고 16:9로 배치해주세요.';
-      }
-      openCropEditor(files[0]);
+      startImageQueue(picker, 'intro');
     });
   }
 
   form.addEventListener('submit', function (event) {
+    if (editorReading || cropState || pendingQueue.length > 0) {
+      event.preventDefault();
+      alert('진행 중인 이미지 편집을 완료하거나 취소한 뒤 저장해주세요.');
+      return;
+    }
+    const start = document.getElementById('enrollmentStartsAt');
+    const end = document.getElementById('enrollmentEndsAt');
+    if (Boolean(start.value) !== Boolean(end.value) || (start.value && end.value && start.value >= end.value)) {
+      event.preventDefault();
+      end.setCustomValidity('기간 한정 모집은 시작과 마감을 모두 입력하고, 마감을 시작 이후로 지정해주세요.');
+      end.reportValidity();
+      return;
+    }
+    const careerInputs = Array.from(document.querySelectorAll('#instructorCareerList input'));
+    if (document.getElementById('lectureStatus').value === 'PUBLISHED' && !careerInputs.some(function (input) { return input.value.trim().length > 0; })) {
+      event.preventDefault();
+      careerInputs[0].setCustomValidity('강사의 주요 이력을 1개 이상 입력해주세요.');
+      careerInputs[0].reportValidity();
+      return;
+    }
     const mode = form.getAttribute('data-mode') || 'edit';
     if (mode === 'create' && (!video || !video.files || video.files.length === 0)) {
       event.preventDefault();
@@ -1356,6 +1469,8 @@
     }
     syncProcessedInput();
     syncImageState();
+    syncInstructorImages();
+    syncGalleryOrder();
 
     const processingOverlay = document.getElementById('videoProcessingOverlay');
     const processingMessage = document.getElementById('videoProcessingMessage');
@@ -1378,6 +1493,301 @@
       submitButton.setAttribute('aria-disabled', 'true');
     }
   });
+
+  function setActiveImageKind(kind) {
+    activeImageKind = kind === 'instructor' ? 'instructor' : 'intro';
+    TARGET_WIDTH = activeImageKind === 'instructor' ? 800 : 1280;
+    TARGET_HEIGHT = activeImageKind === 'instructor' ? 1000 : 720;
+    const ratio = activeImageKind === 'instructor' ? '4:5' : '16:9';
+    placementStage.style.aspectRatio = TARGET_WIDTH + '/' + TARGET_HEIGHT;
+    placementStage.classList.toggle('is-portrait', activeImageKind === 'instructor');
+    document.getElementById('placementStepLabel').textContent = ratio + ' 배치';
+    document.getElementById('placementSizeLabel').textContent = TARGET_WIDTH + ' × ' + TARGET_HEIGHT + ' · ' + ratio + ' · 고객 화면 미리보기';
+  }
+
+  function createUploadChoice(item) {
+    const label = document.createElement('label');
+    label.className = 'mk-image-check';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = item.upload !== false;
+    input.dataset.uploadUid = String(item.uid);
+    const span = document.createElement('span');
+    span.textContent = '업로드 포함';
+    label.append(input, span);
+    return label;
+  }
+
+  function moveProcessedImage(gallery, uid, direction) {
+    const index = gallery.findIndex(function (item) { return item.uid === uid; });
+    const target = index + (direction === 'up' ? -1 : 1);
+    if (index < 0 || target < 0 || target >= gallery.length) return;
+    const item = gallery.splice(index, 1)[0];
+    gallery.splice(target, 0, item);
+  }
+
+  function activeInstructorCards() {
+    return Array.from(document.querySelectorAll('[data-existing-instructor-image]')).filter(function (card) {
+      return !card.querySelector('[data-delete-existing-instructor]').checked;
+    });
+  }
+
+  function syncGalleryOrder() {
+    if (introImageOrderInput) {
+      const introOrder = getActiveExistingCards().map(existingKey);
+      processedImages.filter(function (item) { return item.upload !== false; }).forEach(function (_, index) { introOrder.push('new:' + index); });
+      introImageOrderInput.value = introOrder.join(',');
+    }
+    if (instructorImageOrderInput) {
+      const instructorOrder = activeInstructorCards().map(existingKey);
+      instructorProcessedImages.filter(function (item) { return item.upload !== false; }).forEach(function (_, index) { instructorOrder.push('new:' + index); });
+      instructorImageOrderInput.value = instructorOrder.join(',');
+    }
+  }
+
+  function syncInstructorImages() {
+    if (!instructorProcessedInput) return;
+    const transfer = new DataTransfer();
+    instructorProcessedImages.forEach(function (item) { if (item.upload !== false) transfer.items.add(item.file); });
+    instructorProcessedInput.files = transfer.files;
+    const count = activeInstructorCards().length + transfer.files.length;
+    document.getElementById('instructorImageCountBadge').textContent = '총 ' + count + '장 · 첫 사진이 대표';
+    syncGalleryOrder();
+  }
+
+  function renderInstructorImages() {
+    if (!instructorImageList) return;
+    instructorImageList.replaceChildren();
+    instructorProcessedImages.forEach(function (item, index) {
+      const card = document.createElement('article');
+      card.className = 'mk-lecture-image-card';
+      card.classList.toggle('is-upload-excluded', item.upload === false);
+      const preview = document.createElement('div');
+      preview.className = 'mk-lecture-image-preview';
+      const image = document.createElement('img');
+      image.src = item.previewUrl;
+      image.alt = '편집한 강사 사진 ' + (index + 1);
+      const origin = document.createElement('span');
+      origin.className = 'mk-image-origin-badge is-new';
+      origin.textContent = '신규 ' + (index + 1);
+      preview.append(image, origin);
+      const body = document.createElement('div');
+      body.className = 'mk-lecture-image-card-body';
+      const name = document.createElement('strong');
+      name.className = 'mk-lecture-image-name';
+      name.textContent = item.originalName;
+      const tools = document.createElement('div');
+      tools.className = 'mk-new-image-tools';
+      tools.append(createIconButton('fa fa-pencil', '다시 편집', 'edit', item.uid), createIconButton('fa fa-trash-o', '제외', 'remove', item.uid));
+      const order = document.createElement('div');
+      order.className = 'mk-new-image-tools';
+      const up = createIconButton('fa fa-arrow-up', '앞 순서', 'up', item.uid);
+      const down = createIconButton('fa fa-arrow-down', '뒤 순서', 'down', item.uid);
+      up.disabled = index === 0;
+      down.disabled = index === instructorProcessedImages.length - 1;
+      order.append(up, down);
+      body.append(name, tools, order, createUploadChoice(item));
+      card.append(preview, body);
+      instructorImageList.append(card);
+    });
+    instructorImageEmpty.classList.toggle('is-hidden', instructorProcessedImages.length > 0);
+    syncInstructorImages();
+  }
+
+  if (instructorImageList) {
+    instructorImageList.addEventListener('change', function (event) {
+      const input = event.target.closest('[data-upload-uid]');
+      if (!input) return;
+      const item = instructorProcessedImages.find(function (entry) { return entry.uid === Number(input.dataset.uploadUid); });
+      if (item) item.upload = input.checked;
+      renderInstructorImages();
+    });
+    instructorImageList.addEventListener('click', function (event) {
+      const button = event.target.closest('[data-action][data-uid]');
+      if (!button) return;
+      const uid = Number(button.dataset.uid);
+      const item = instructorProcessedImages.find(function (entry) { return entry.uid === uid; });
+      if (!item) return;
+      if (button.dataset.action === 'remove') {
+        URL.revokeObjectURL(item.previewUrl);
+        instructorProcessedImages = instructorProcessedImages.filter(function (entry) { return entry.uid !== uid; });
+        renderInstructorImages();
+      } else if (button.dataset.action === 'edit') {
+        setActiveImageKind('instructor');
+        editingProcessedUid = uid;
+        editingSnapshot = item.snapshot || null;
+        pendingQueue = [];
+        pendingQueueIndex = 0;
+        openCropEditor(item.sourceFile, '강사 사진 다시 편집');
+      } else {
+        moveProcessedImage(instructorProcessedImages, uid, button.dataset.action);
+        renderInstructorImages();
+      }
+    });
+  }
+
+  document.querySelectorAll('[data-delete-existing-instructor]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      input.closest('.mk-lecture-image-card').classList.toggle('is-marked-delete', input.checked);
+      syncInstructorImages();
+    });
+  });
+
+  document.querySelectorAll('[data-existing-intro-move], [data-existing-instructor-move]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const card = button.closest('.mk-lecture-image-card');
+      const direction = button.dataset.existingIntroMove || button.dataset.existingInstructorMove;
+      if (direction === 'up' && card.previousElementSibling) card.parentNode.insertBefore(card, card.previousElementSibling);
+      if (direction === 'down' && card.nextElementSibling) card.parentNode.insertBefore(card.nextElementSibling, card);
+      syncImageState();
+      syncInstructorImages();
+    });
+  });
+
+  function startImageQueue(input, kind) {
+    const files = Array.from(input.files || []);
+    input.value = '';
+    if (!files.length || editorReading || cropState) return;
+    const limitMB = kind === 'instructor' ? 15 : 30;
+    const maxImages = kind === 'instructor' ? 20 : 30;
+    const invalid = files.filter(function (file) { return !/^image\/(jpeg|png|webp|gif|bmp)$/i.test(file.type) || file.size > limitMB * 1024 * 1024; });
+    if (invalid.length) {
+      alert('JPG, PNG, WebP, GIF, BMP 이미지(파일당 최대 ' + limitMB + 'MB)를 선택해주세요.\n확인 필요: ' + invalid.map(function (file) { return file.name; }).join(', '));
+      return;
+    }
+    const gallery = kind === 'instructor' ? instructorProcessedImages : processedImages;
+    const existingCount = kind === 'instructor' ? activeInstructorCards().length : getActiveExistingCards().length;
+    if (gallery.length + existingCount + files.length > maxImages) { alert('이 이미지 목록은 최대 ' + maxImages + '장까지 등록할 수 있습니다.'); return; }
+    setActiveImageKind(kind);
+    pendingQueue = files;
+    pendingQueueIndex = 0;
+    editingProcessedUid = null;
+    editingSnapshot = null;
+    openCropEditor(files[0]);
+  }
+
+  function skipFailedImage() {
+    if (pendingQueue.length && pendingQueueIndex + 1 < pendingQueue.length) {
+      pendingQueueIndex += 1;
+      openCropEditor(pendingQueue[pendingQueueIndex]);
+    } else {
+      closeCropEditor(true);
+    }
+  }
+
+  function transformOriginalImage(resetCrop) {
+    if (!cropState) return;
+    const original = cropState.originalImage;
+    const canvas = document.createElement('canvas');
+    const swapped = cropState.rotation % 180 !== 0;
+    canvas.width = swapped ? original.naturalHeight : original.naturalWidth;
+    canvas.height = swapped ? original.naturalWidth : original.naturalHeight;
+    const context = canvas.getContext('2d');
+    context.translate(canvas.width / 2, canvas.height / 2);
+    context.rotate(cropState.rotation * Math.PI / 180);
+    context.scale(cropState.flipX ? -1 : 1, cropState.flipY ? -1 : 1);
+    context.drawImage(original, -original.naturalWidth / 2, -original.naturalHeight / 2);
+    cropState.image = canvas;
+    cropState.naturalWidth = canvas.width;
+    cropState.naturalHeight = canvas.height;
+    cropSourceImage.src = canvas.toDataURL('image/png');
+    if (resetCrop !== false) setFullImageCrop();
+    refreshCropSourceStageMetrics();
+    renderCropSelection();
+  }
+
+  function setSourceZoom(percent) {
+    if (!cropState) return;
+    const value = clampNumber(percent, 50, 300);
+    cropState.sourceZoom = value / 100;
+    sourceZoomRange.value = value;
+    sourceZoomValue.textContent = Math.round(value) + '%';
+    refreshCropSourceStageMetrics();
+    renderCropSelection();
+  }
+
+  sourceZoomRange.addEventListener('input', function () { setSourceZoom(Number(sourceZoomRange.value)); });
+  document.getElementById('sourceZoomOut').addEventListener('click', function () { setSourceZoom(Number(sourceZoomRange.value) - 10); });
+  document.getElementById('sourceZoomIn').addEventListener('click', function () { setSourceZoom(Number(sourceZoomRange.value) + 10); });
+  document.getElementById('sourceRotateLeft').addEventListener('click', function () { if (cropState) { cropState.rotation = (cropState.rotation + 270) % 360; transformOriginalImage(); } });
+  document.getElementById('sourceRotateRight').addEventListener('click', function () { if (cropState) { cropState.rotation = (cropState.rotation + 90) % 360; transformOriginalImage(); } });
+  document.getElementById('sourceFlipHorizontal').addEventListener('click', function () { if (cropState) { cropState.flipX = !cropState.flipX; transformOriginalImage(); } });
+  document.getElementById('sourceFlipVertical').addEventListener('click', function () { if (cropState) { cropState.flipY = !cropState.flipY; transformOriginalImage(); } });
+  document.getElementById('sourceReset').addEventListener('click', function () {
+    if (!cropState) return;
+    cropState.rotation = 0; cropState.flipX = false; cropState.flipY = false;
+    transformOriginalImage(); setSourceZoom(100);
+  });
+
+  if (instructorPicker) instructorPicker.addEventListener('change', function () { startImageQueue(instructorPicker, 'instructor'); });
+
+  editorModal.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && editorModal.getAttribute('aria-busy') !== 'true') { event.preventDefault(); closeCropEditor(true); }
+    if (event.key !== 'Tab') return;
+    const candidates = Array.from(editorModal.querySelectorAll('button:not(:disabled), input:not(:disabled), [tabindex="0"]')).filter(function (element) { return element.getClientRects().length > 0; });
+    const first = candidates[0];
+    const last = candidates[candidates.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  });
+
+  const careerList = document.getElementById('instructorCareerList');
+  const addCareerButton = document.getElementById('addInstructorCareer');
+  function numberCareers() {
+    const rows = Array.from(careerList.children);
+    rows.forEach(function (row, index) {
+      row.querySelector('.mk-career-number').textContent = String(index + 1).padStart(2, '0');
+      row.querySelector('[data-career-action="up"]').disabled = index === 0;
+      row.querySelector('[data-career-action="down"]').disabled = index === rows.length - 1;
+      row.querySelector('[data-career-action="remove"]').disabled = rows.length === 1;
+    });
+    addCareerButton.disabled = rows.length >= 30;
+  }
+  function addCareer(focus) {
+    if (careerList.children.length >= 30) return;
+    const row = document.createElement('div');
+    row.className = 'mk-career-row';
+    row.innerHTML = '<span class="mk-career-number"></span><input name="instructorCareers" maxlength="500" aria-label="강사 이력" placeholder="실제 학력, 자격 또는 강의 경력"><div class="mk-career-actions"><button type="button" data-career-action="up" aria-label="이력 위로 이동">↑</button><button type="button" data-career-action="down" aria-label="이력 아래로 이동">↓</button><button type="button" data-career-action="remove" aria-label="이력 삭제">×</button></div>';
+    careerList.append(row);
+    numberCareers();
+    if (focus) row.querySelector('input').focus();
+  }
+  addCareerButton.addEventListener('click', function () { addCareer(true); });
+  careerList.addEventListener('input', function (event) {
+    if (event.target.matches('input')) careerList.querySelectorAll('input').forEach(function (input) { input.setCustomValidity(''); });
+  });
+  careerList.addEventListener('click', function (event) {
+    const button = event.target.closest('[data-career-action]');
+    if (!button) return;
+    const row = button.closest('.mk-career-row');
+    if (button.dataset.careerAction === 'remove' && careerList.children.length > 1) row.remove();
+    if (button.dataset.careerAction === 'up' && row.previousElementSibling) careerList.insertBefore(row, row.previousElementSibling);
+    if (button.dataset.careerAction === 'down' && row.nextElementSibling) careerList.insertBefore(row.nextElementSibling, row);
+    numberCareers();
+  });
+  if (!careerList.children.length) for (let index = 0; index < 5; index += 1) addCareer(false);
+  numberCareers();
+
+  function syncPublicationRequirements() {
+    document.getElementById('instructorName').required = document.getElementById('lectureStatus').value === 'PUBLISHED';
+    document.querySelectorAll('#instructorCareerList input').forEach(function (input) { input.setCustomValidity(''); });
+  }
+  document.getElementById('lectureStatus').addEventListener('change', syncPublicationRequirements);
+  syncPublicationRequirements();
+
+  function renderSchedule() {
+    const start = document.getElementById('enrollmentStartsAt');
+    const end = document.getElementById('enrollmentEndsAt');
+    const lectureStart = document.getElementById('lectureStartsAt').value;
+    const days = document.getElementById('viewingDays').value;
+    end.setCustomValidity(Boolean(start.value) !== Boolean(end.value) || (start.value && end.value && start.value >= end.value) ? '모집 시작과 마감을 모두 입력하고, 마감을 시작 이후로 지정해주세요.' : '');
+    const format = function (value) { return value.replace('T', ' ').replace(/-/g, '.'); };
+    const enrollment = !start.value && !end.value ? '상시 모집' : (start.value ? format(start.value) : '상시') + ' ~ ' + (end.value ? format(end.value) : '마감 제한 없음');
+    document.getElementById('schedulePreview').textContent = '모집: ' + enrollment + ' · 강의 시작: ' + (lectureStart ? format(lectureStart) : '신청 후 바로') + ' · 수강기간: ' + (days ? days + '일 (신청일과 강의 시작 중 늦은 날부터)' : '무제한');
+  }
+  ['enrollmentStartsAt', 'enrollmentEndsAt', 'lectureStartsAt', 'viewingDays'].forEach(function (id) { document.getElementById(id).addEventListener('input', renderSchedule); });
+  renderSchedule();
+  renderInstructorImages();
 
   const initiallyCheckedThumbnail = document.querySelector('[data-existing-image] [data-thumbnail-choice]:checked');
   if (initiallyCheckedThumbnail) {

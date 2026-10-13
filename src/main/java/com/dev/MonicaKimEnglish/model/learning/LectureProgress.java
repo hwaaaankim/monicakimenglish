@@ -29,6 +29,15 @@ public class LectureProgress {
     @Column(name = "watched_seconds", nullable = false)
     private long watchedSeconds;
 
+    /** 실제 재생 구간의 합집합입니다. 밀리초 단위 start:end 목록을 보관합니다. */
+    @Lob
+    @Column(name = "watched_ranges", columnDefinition = "LONGTEXT")
+    private String watchedRanges;
+
+    /** 과거 버전에 구간 정보 없이 저장된 학습량은 보존하되 중복 가산하지 않습니다. */
+    @Column(name = "legacy_watched_seconds", nullable = false)
+    private long legacyWatchedSeconds;
+
     @Column(name = "last_position_seconds", nullable = false)
     private long lastPositionSeconds;
 

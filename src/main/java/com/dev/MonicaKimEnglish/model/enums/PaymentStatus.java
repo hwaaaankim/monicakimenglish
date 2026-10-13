@@ -1,5 +1,5 @@
 package com.dev.MonicaKimEnglish.model.enums;
 
 public enum PaymentStatus {
-    PENDING, PAID, CANCELED, REFUNDED, FAILED
+    PENDING, PAID, PARTIALLY_REFUNDED, CANCELED, REFUNDED, FAILED
 }

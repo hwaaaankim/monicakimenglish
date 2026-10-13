@@ -47,6 +47,9 @@ public class LectureViewSession {
     @Column(name = "last_position_seconds", nullable = false)
     private long lastPositionSeconds;
 
+    @Column(name = "last_sequence", nullable = false)
+    private long lastSequence;
+
     @Column(name = "user_agent", length = 500)
     private String userAgent;
 

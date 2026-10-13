@@ -103,10 +103,20 @@ public class AdminController {
             @RequestParam(required=false) MultipartFile[] introImages,
             @RequestParam(required=false, defaultValue="") String thumbnailSelection,
             @RequestParam(required=false) MultipartFile[] attachments,
-            RedirectAttributes redirectAttributes) {
+            @RequestParam(required=false, defaultValue="") String introImageOrder,
+            @RequestParam(required=false) String instructorName,
+            @RequestParam(required=false) String instructorBiography,
+            @RequestParam(required=false) MultipartFile[] instructorImages,
+            @RequestParam(required=false, defaultValue="") String instructorImageOrder,
+            @RequestParam(required=false) @DateTimeFormat(iso=DateTimeFormat.ISO.DATE_TIME) LocalDateTime enrollmentStartsAt,
+            @RequestParam(required=false) @DateTimeFormat(iso=DateTimeFormat.ISO.DATE_TIME) LocalDateTime enrollmentEndsAt,
+            @RequestParam(required=false) @DateTimeFormat(iso=DateTimeFormat.ISO.DATE_TIME) LocalDateTime lectureStartsAt,
+            HttpServletRequest request, RedirectAttributes redirectAttributes) {
         try {
             var lecture = lectures.create(title, description, pricingType, price, viewingDays, status, tags,
-                    video, introImages, thumbnailSelection, attachments);
+                    video, introImages, thumbnailSelection, attachments, introImageOrder,
+                    instructorName, instructorBiography, rawInstructorCareers(request), instructorImages, instructorImageOrder,
+                    enrollmentStartsAt, enrollmentEndsAt, lectureStartsAt);
             return "redirect:/admin/lectures/" + lecture.getId();
         } catch (IllegalArgumentException | IllegalStateException e) {
             redirectAttributes.addFlashAttribute("formError", e.getMessage());
@@ -117,6 +127,7 @@ public class AdminController {
     @GetMapping("/admin/lectures/{id}")
     public String lectureDetail(@PathVariable Long id, Model model) {
         var l = lectures.get(id); model.addAttribute("lecture", l); model.addAttribute("images", lectures.introImages(id)); model.addAttribute("attachments", lectures.attachmentList(id)); model.addAttribute("tags", lectures.tagList(id));
+        model.addAttribute("instructorImages", lectures.instructorImages(id));
         model.addAttribute("buyers", adminQueries.buyers(id)); model.addAttribute("sessions", viewSessions.findRecentForLecture(id).stream().limit(200).toList()); model.addAttribute("purchaseCount", lectures.purchaseCount(id));
         return "admin/lecture/detail";
     }
@@ -124,6 +135,7 @@ public class AdminController {
     @GetMapping("/admin/lectures/{id}/edit")
     public String lectureEdit(@PathVariable Long id, Model model) {
         model.addAttribute("lecture", lectures.get(id)); model.addAttribute("images", lectures.introImages(id)); model.addAttribute("attachments", lectures.attachmentList(id)); model.addAttribute("tagText", String.join(", ", lectures.tagList(id)));
+        model.addAttribute("instructorImages", lectures.instructorImages(id));
         return "admin/lecture/form";
     }
 
@@ -135,15 +147,32 @@ public class AdminController {
             @RequestParam(required=false, defaultValue="") String thumbnailSelection,
             @RequestParam(required=false) MultipartFile[] attachments,
             @RequestParam(required=false) List<Long> deleteImageIds, @RequestParam(required=false) List<Long> deleteAttachmentIds,
-            RedirectAttributes redirectAttributes) {
+            @RequestParam(required=false, defaultValue="") String introImageOrder,
+            @RequestParam(required=false) String instructorName,
+            @RequestParam(required=false) String instructorBiography,
+            @RequestParam(required=false) MultipartFile[] instructorImages,
+            @RequestParam(required=false) List<Long> deleteInstructorImageIds,
+            @RequestParam(required=false, defaultValue="") String instructorImageOrder,
+            @RequestParam(required=false) @DateTimeFormat(iso=DateTimeFormat.ISO.DATE_TIME) LocalDateTime enrollmentStartsAt,
+            @RequestParam(required=false) @DateTimeFormat(iso=DateTimeFormat.ISO.DATE_TIME) LocalDateTime enrollmentEndsAt,
+            @RequestParam(required=false) @DateTimeFormat(iso=DateTimeFormat.ISO.DATE_TIME) LocalDateTime lectureStartsAt,
+            HttpServletRequest request, RedirectAttributes redirectAttributes) {
         try {
             lectures.update(id, title, description, pricingType, price, viewingDays, status, tags,
-                    video, introImages, thumbnailSelection, attachments, deleteImageIds, deleteAttachmentIds);
+                    video, introImages, thumbnailSelection, attachments, deleteImageIds, deleteAttachmentIds,
+                    introImageOrder, instructorName, instructorBiography, rawInstructorCareers(request), instructorImages,
+                    deleteInstructorImageIds, instructorImageOrder, enrollmentStartsAt, enrollmentEndsAt, lectureStartsAt);
             return "redirect:/admin/lectures/" + id + "?saved";
         } catch (IllegalArgumentException | IllegalStateException e) {
             redirectAttributes.addFlashAttribute("formError", e.getMessage());
             return "redirect:/admin/lectures/" + id + "/edit";
         }
+    }
+
+    private List<String> rawInstructorCareers(HttpServletRequest request) {
+        // Spring의 단일 String -> List 변환은 쉼표를 분리하므로 실제 이력 문장의 쉼표를 보존합니다.
+        String[] values = request.getParameterValues("instructorCareers");
+        return values == null ? List.of() : java.util.Arrays.asList(values);
     }
 
     @PostMapping("/admin/lectures/{id}/archive")

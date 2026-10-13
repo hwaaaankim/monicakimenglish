@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{front/fragments/common :: head('영상강의 이용·환불 안내 | MonicaKim English')}"></head>
+<body class="stretched mk-platform-page">
+<div id="wrapper">
+  <th:block th:replace="~{front/fragments/common :: header}"></th:block>
+  <main class="mk-page-shell mk-guide-page">
+    <header class="mk-guide-intro">
+      <p>MONICA KIM ENGLISH · 수강 안내</p>
+      <h1>영상강의 이용·환불 안내</h1>
+      <p>상품 상세의 강사 정보와 신청 일정, 수강기간을 확인하고 수강을 신청해 주세요.</p>
+    </header>
+    <section class="mk-panel">
+      <h2>모집 인원과 관계없이 진행합니다</h2>
+      <p>영상강의는 사전 제작된 강의로, 신청 인원이 적거나 모집 목표에 도달하지 않아도 상품에 안내된 시작 시점부터 정상 제공됩니다.</p>
+      <p>상시 모집 강의는 신청 마감이 없으며, 기간 모집 강의는 상세페이지에 표시된 모집 시작·마감 시점에 신청할 수 있습니다. 별도의 시작 일정이 없는 강의는 신청 완료 후 바로 시청할 수 있습니다.</p>
+      <p>수강기간은 모집기간과 별개입니다. 무제한 강의는 수강 종료일 없이, 기간제 강의는 상품에 표시된 일수 동안 이용할 수 있습니다. 신청 후 내 강의실에서 실제 수강 시작일과 종료일을 확인할 수 있습니다.</p>
+    </section>
+    <section class="mk-panel">
+      <th:block th:replace="~{front/fragments/course-policy :: policy}"></th:block>
+    </section>
+    <section class="mk-panel">
+      <h2>수강 기록과 콘텐츠 이용</h2>
+      <p>무료 강의도 로그인 후 ‘무료로 강의 듣기’를 눌러 신청합니다. 무료 신청에 결제창이 열리거나 금액이 청구되지는 않습니다.</p>
+      <p>신청한 강의는 내 강의실에 저장되며 마지막 재생 위치와 강의별 최대 5개의 책갈피를 이용할 수 있습니다. 책갈피 이동이나 빨리감기로 건너뛴 구간은 실제 시청량에 더하지 않습니다.</p>
+      <p>강의와 첨부자료는 신청한 회원 본인의 학습을 위한 콘텐츠입니다. 영상 녹화·복제·재배포와 계정 공유는 허용되지 않습니다.</p>
+      <p>환불·수강 관련 문의: <a href="mailto:koolkools0824@naver.com">koolkools0824@naver.com</a> · <a href="tel:025588626">02-558-8626</a></p>
+    </section>
+    <a class="mk-primary-btn" href="/lectures">영상강의 보기</a>
+  </main>
+  <th:block th:replace="~{front/fragments/common :: footer}"></th:block>
+</div>
+<th:block th:replace="~{front/fragments/common :: script}"></th:block>
+</body>
+</html>

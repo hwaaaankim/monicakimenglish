@@ -28,11 +28,11 @@ public class AdminQueryService {
         List<Object[]> rows = em.createNativeQuery("""
             SELECT l.id, l.title,
                    COUNT(DISTINCT p.id) AS sales_count,
-                   COALESCE(SUM(p.amount), 0) AS revenue,
+                   COALESCE(SUM(p.amount - COALESCE(p.refunded_amount, 0)), 0) AS revenue,
                    COALESCE((SELECT COUNT(v.id) FROM lecture_view_session v WHERE v.lecture_id=l.id AND v.started_at BETWEEN :from AND :to),0) AS view_count,
                    COALESCE((SELECT SUM(v.watched_seconds) FROM lecture_view_session v WHERE v.lecture_id=l.id AND v.started_at BETWEEN :from AND :to),0) AS play_seconds
               FROM lecture l
-              LEFT JOIN payment p ON p.lecture_id=l.id AND p.status='PAID' AND p.approved_at BETWEEN :from AND :to
+              LEFT JOIN payment p ON p.lecture_id=l.id AND p.status IN ('PAID','PARTIALLY_REFUNDED') AND p.provider='TOSS' AND p.approved_at BETWEEN :from AND :to
              GROUP BY l.id, l.title
              ORDER BY revenue DESC, sales_count DESC, view_count DESC
             """).setParameter("from", from).setParameter("to", to).getResultList();
@@ -41,9 +41,9 @@ public class AdminQueryService {
     }
 
     public List<BuyerRowDto> buyers(Long lectureId) {
-        return payments.findForLecture(lectureId, PaymentStatus.PAID).stream().map(p -> {
+        return payments.findActiveBuyersForLecture(lectureId).stream().map(p -> {
             var progress = progresses.findByClientIdAndLectureId(p.getClient().getId(), lectureId).orElse(null);
-            return new BuyerRowDto(p.getClient().getId(), p.getClient().getUsername(), p.getClient().getName(), p.getClient().getPhone(), p.getAmount(), p.getApprovedAt(),
+            return new BuyerRowDto(p.getClient().getId(), p.getClient().getUsername(), p.getClient().getName(), p.getClient().getPhone(), p.getNetAmount(), p.getApprovedAt(),
                     progress == null ? 0 : progress.getProgressPercent(), progress == null ? 0 : progress.getWatchedSeconds(), progress == null ? 0 : progress.getViewCount());
         }).toList();
     }

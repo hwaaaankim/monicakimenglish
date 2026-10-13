@@ -3,14 +3,14 @@
 
 <head th:replace="~{front/fragments/common :: head('내 강의실')}"></head>
 
-<body class="stretched mk-platform-page">
+<body class="stretched mk-platform-page mk-classroom-page">
 	<div id="wrapper" class="clearfix">
 		<th:block th:replace="~{front/fragments/common :: header}"></th:block>
 		<main class="mk-my-page">
 			<div class="container">
 				<div class="mk-page-title"><small>MY CLASSROOM</small>
 					<h1>내 강의실</h1>
-					<p>구매하거나 무료 수강 등록한 강의의 학습 현황입니다.</p>
+					<p>구매하거나 무료로 신청한 강의를 이어서 시청하세요. 마지막 장면과 책갈피도 함께 보관됩니다.</p>
 				</div>
 				<form class="mk-filter-panel" method="get">
 					<div class="row g-2 align-items-end">
@@ -19,7 +19,8 @@
 						<div class="col-6 col-lg-2"><label>수강 상태<select name="access">
 									<option value="ALL">전체</option>
 									<option value="AVAILABLE" th:selected="${access=='AVAILABLE'}">수강 가능</option>
-									<option value="EXPIRED" th:selected="${access=='EXPIRED'}">기간 만료</option>
+									<option value="UPCOMING" th:selected="${access=='UPCOMING'}">시작 예정</option>
+                                    <option value="EXPIRED" th:selected="${access=='EXPIRED'}">수강 불가</option>
 								</select></label></div>
 						<div class="col-6 col-lg-2"><label>학습 상태<select name="progress">
 									<option value="ALL">전체</option>
@@ -41,11 +42,11 @@
 					<div class="col-12 col-md-6 col-lg-4" th:each="item:${lectures}">
 						<th:block th:replace="~{front/fragments/lecture-card :: card(${item})}"></th:block>
 						<div class="mk-access-note"
-							th:classappend="${item.accessAvailable} ? ' available' : ' expired'"><span
-								th:text="${item.accessAvailable ? '수강 가능' : '수강 기간 만료'}"></span><strong
-								th:if="${item.expiresAt != null}"
+							th:classappend="${item.accessAvailable ? 'available' : (#sets.contains(upcomingLectureIds,item.id) ? 'upcoming' : 'expired')}"><span
+								th:text="${item.accessAvailable ? '수강 가능' : (enrollmentByLecture[item.id].status.name() == 'CANCELED' ? '수강 취소' : (#sets.contains(upcomingLectureIds,item.id) ? '신청 완료 · 시작 예정' : (#sets.contains(expiredLectureIds,item.id) ? '수강 기간 만료' : '수강권 확인 필요')))}"></span><strong
+								th:if="${item.expiresAt != null and enrollmentByLecture[item.id].status.name() != 'CANCELED'}"
 								th:text="${#temporals.format(item.expiresAt,'yyyy.MM.dd HH:mm') + '까지'}"></strong><strong
-								th:if="${item.expiresAt == null and item.accessAvailable}">무제한</strong></div>
+                                th:if="${item.expiresAt == null and enrollmentByLecture[item.id].status.name() != 'CANCELED'}">무제한</strong><span class="mk-access-start" th:if="${#sets.contains(upcomingLectureIds,item.id)}" th:text="${#temporals.format(enrollmentByLecture[item.id].startedAt,'yyyy.MM.dd HH:mm') + ' 시작'}"></span></div><div class="mk-classroom-learning" th:if="${item.owned}" th:attr="data-learning-summary=${item.id},data-learning-compact=true,data-learning-available=${item.accessAvailable}"><div data-learning-content><p class="mk-learning-loading">학습 기록을 불러오고 있어요.</p></div></div>
 					</div>
 				</div>
 			</div>
@@ -53,7 +54,7 @@
 		<th:block th:replace="~{front/fragments/common :: footer}"></th:block>
 	</div>
 	<th:block th:replace="~{front/fragments/common :: script}"></th:block>
-	<script src="/front/js/lecture.js"></script>
+	<script src="/front/js/lecture.js?v=20261013-1"></script>
 </body>
 
 </html>

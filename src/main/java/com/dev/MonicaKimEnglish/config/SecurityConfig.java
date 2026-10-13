@@ -105,7 +105,7 @@ public class SecurityConfig {
 
         http
             // 초기 관리자 생성 API는 bootstrap token을 별도로 검증하므로 개발 초기화 중에만 CSRF 제외합니다.
-            .csrf(csrf -> csrf.ignoringRequestMatchers("/setup/admin", "/setup/admin/reset-password"))
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/setup/admin", "/setup/admin/reset-password", "/payments/toss/webhook"))
             .authenticationProvider(clientAuthenticationProvider)
             // 로그인 후 돌아갈 주소는 실제 HTML 화면 요청만 저장합니다.
             // 서비스워커/JS/영상/API 같은 백그라운드 요청이 로그인 성공 경로를 가로채지 못하게 합니다.
@@ -118,6 +118,8 @@ public class SecurityConfig {
                     "/member",
                     "/recruit",
                     "/contact",
+
+                    "/lecture-guide",
                     "/client"
                 ).permitAll()
                 .requestMatchers(
@@ -137,6 +139,8 @@ public class SecurityConfig {
                     "/media/popups/**"
                 ).permitAll()
                 // 실제 수강/영상/자료는 고객 인증이 필요합니다.
+                // 웹훅은 브라우저 인증 대신 서버에서 PG 결제를 다시 조회하여 검증합니다.
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/payments/toss/webhook").permitAll()
                 .requestMatchers(
                     "/my/**",
                     "/wishlist/**",

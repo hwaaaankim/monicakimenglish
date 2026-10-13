@@ -14,10 +14,10 @@
 						<a href="/my/classroom">← 내 강의실</a>
 						<h1 th:text="${lecture.title}">강의 제목</h1>
 					</div>
-					<span th:text="${lecture.viewingDays == null ? '무제한 수강' : '기간제 수강'}">수강</span>
+					<span th:text="${accessExpiresAt == null ? '무제한 수강' : #temporals.format(accessExpiresAt,'yyyy.MM.dd HH:mm') + '까지'}">수강</span>
 				</div>
 
-				<section class="mk-video-shell mk-secure-player" id="secureLecturePlayer"
+				<section class="mk-video-shell mk-secure-player" id="secureLecturePlayer" tabindex="0" aria-label="영상강의 플레이어"
 					th:attr="data-lecture-id=${lecture.id},data-watermark=${playerWatermark}">
 
 					<video id="lecturePlayer" playsinline preload="metadata" tabindex="-1"
@@ -92,7 +92,7 @@
 									hidden>
 									<div class="mk-player-popover-head">
 										<strong>내 책갈피</strong>
-										<small>이 브라우저에 저장됩니다.</small>
+										<small>계정에 저장 · 강의당 최대 5개</small>
 									</div>
 									<div class="mk-player-bookmark-list" id="playerBookmarkList"></div>
 									<div class="mk-player-bookmark-empty" id="playerBookmarkEmpty">저장한 책갈피가 없습니다.</div>
@@ -134,6 +134,18 @@
 					<span><b>B</b> 책갈피 추가</span>
 				</div>
 
+                <section class="mk-learning-overview mk-watch-learning" aria-labelledby="playerLearningTitle">
+                  <div class="mk-learning-heading"><div><small>MY LEARNING</small><h2 id="playerLearningTitle">이어서 학습하기</h2></div><button type="button" class="mk-secondary-btn" onclick="document.getElementById('playerBookmarkAddBtn').click()">+ 현재 장면 책갈피</button></div>
+                  <p class="mk-learning-caption" id="playerLearningNotice">마지막 시청 위치는 자동으로 저장됩니다. 책갈피는 계정에 최대 5개 저장할 수 있어요.</p>
+                  <div class="mk-learning-point-grid" id="playerLearningContent"><p class="mk-learning-loading" role="status">저장된 학습 기록을 불러오고 있어요.</p></div>
+                </section>
+                <dialog class="mk-bookmark-editor-dialog" id="playerBookmarkDialog" aria-labelledby="bookmarkEditorTitle">
+                  <form id="bookmarkEditorForm"><div class="mk-bookmark-editor-head"><h2 id="bookmarkEditorTitle">현재 장면 책갈피 추가</h2><button type="button" data-close-bookmark-editor aria-label="닫기">×</button></div>
+                    <p><strong id="bookmarkEditorTime">0:00</strong> 장면을 저장합니다.</p><label for="bookmarkLabelInput">책갈피 이름</label><input type="text" id="bookmarkLabelInput" maxlength="60" required autocomplete="off" placeholder="다시 보고 싶은 핵심 표현">
+                    <p class="mk-bookmark-editor-error" id="bookmarkEditorError" role="alert"></p><div class="mk-bookmark-editor-actions"><button type="button" class="mk-secondary-btn" data-close-bookmark-editor>취소</button><button type="submit" class="mk-primary-btn" id="bookmarkSaveButton">저장하기</button></div>
+                  </form>
+                </dialog>
+
 				<div class="row g-3 mt-2">
 					<div class="col-12 col-lg-8">
 						<section class="mk-watch-info">
@@ -159,7 +171,7 @@
 		<th:block th:replace="~{front/fragments/common :: footer}"></th:block>
 	</div>
 	<th:block th:replace="~{front/fragments/common :: script}"></th:block>
-	<script src="/front/js/player.js?v=20260824-5"></script>
+	<script src="/front/js/player.js?v=20261013-1"></script>
 </body>
 
 </html>

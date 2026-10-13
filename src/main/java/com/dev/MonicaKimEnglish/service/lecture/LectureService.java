@@ -1,6 +1,7 @@
 package com.dev.MonicaKimEnglish.service.lecture;
 
 import java.math.BigDecimal;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,6 +10,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.LinkedHashSet;
+import java.util.Iterator;
+
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -24,18 +31,21 @@ import com.dev.MonicaKimEnglish.model.learning.Enrollment;
 import com.dev.MonicaKimEnglish.model.lecture.Lecture;
 import com.dev.MonicaKimEnglish.model.lecture.LectureAttachment;
 import com.dev.MonicaKimEnglish.model.lecture.LectureIntroImage;
+import com.dev.MonicaKimEnglish.model.lecture.LectureInstructorImage;
 import com.dev.MonicaKimEnglish.model.lecture.LectureTag;
 import com.dev.MonicaKimEnglish.repository.learning.EnrollmentRepository;
 import com.dev.MonicaKimEnglish.repository.learning.LectureProgressRepository;
 import com.dev.MonicaKimEnglish.repository.learning.WishlistRepository;
 import com.dev.MonicaKimEnglish.repository.lecture.LectureAttachmentRepository;
 import com.dev.MonicaKimEnglish.repository.lecture.LectureIntroImageRepository;
+import com.dev.MonicaKimEnglish.repository.lecture.LectureInstructorImageRepository;
 import com.dev.MonicaKimEnglish.repository.lecture.LectureRepository;
 import com.dev.MonicaKimEnglish.repository.lecture.LectureTagRepository;
 import com.dev.MonicaKimEnglish.repository.payment.PaymentRepository;
 import com.dev.MonicaKimEnglish.service.storage.FfmpegService;
 import com.dev.MonicaKimEnglish.service.storage.FileStorageService;
 import com.dev.MonicaKimEnglish.service.storage.TransactionFileCleanup;
+import com.dev.MonicaKimEnglish.service.learning.EnrollmentFundingPolicy;
 
 import lombok.RequiredArgsConstructor;
 
@@ -45,6 +55,7 @@ public class LectureService {
     private final LectureRepository lectures;
     private final LectureTagRepository tags;
     private final LectureIntroImageRepository images;
+    private final LectureInstructorImageRepository instructorImageRepository;
     private final LectureAttachmentRepository attachments;
     private final EnrollmentRepository enrollments;
     private final WishlistRepository wishlists;
@@ -53,6 +64,7 @@ public class LectureService {
     private final FileStorageService storage;
     private final FfmpegService ffmpeg;
     private final TransactionFileCleanup fileCleanup;
+    private final EnrollmentFundingPolicy fundingPolicy;
 
     public Lecture get(Long id) {
         return lectures.findById(id)
@@ -130,9 +142,10 @@ public class LectureService {
 
         if (clientId != null) {
             List<Enrollment> history = enrollments.findHistory(clientId, lecture.getId());
-            List<Enrollment> usable = enrollments.findUsable(clientId, lecture.getId(), LocalDateTime.now());
+            List<Enrollment> usable = enrollments.findUsable(clientId, lecture.getId(), LocalDateTime.now()).stream()
+                    .filter(fundingPolicy::isEligible).toList();
             owned = !history.isEmpty();
-            available = !usable.isEmpty();
+            available = lecture.getStatus() != LectureStatus.DRAFT && !usable.isEmpty();
 
             if (available) {
                 expires = usable.get(0).getExpiresAt();
@@ -171,6 +184,30 @@ public class LectureService {
         return images.findByLectureIdOrderByDisplayOrderAsc(lectureId);
     }
 
+    public List<LectureInstructorImage> instructorImages(Long lectureId) {
+        return instructorImageRepository.findByLectureIdOrderByDisplayOrderAsc(lectureId);
+    }
+
+    public void requireEnrollmentOpen(Lecture lecture) {
+        LocalDateTime now = LocalDateTime.now();
+        if (lecture.getStatus() != LectureStatus.PUBLISHED) {
+            throw new IllegalArgumentException("현재 신청할 수 없는 강의입니다.");
+        }
+        if (lecture.getInstructorName() == null || lecture.getInstructorName().isBlank() || lecture.getInstructorCareers().isEmpty()) {
+            throw new IllegalArgumentException("강사 정보 보완 중입니다. 관리자에게 문의해주세요.");
+        }
+        if (lecture.getVideoPath() == null || lecture.getVideoPath().isBlank() || lecture.getDurationSeconds() <= 0) {
+            throw new IllegalArgumentException("강의 영상 준비 중입니다. 관리자에게 문의해주세요.");
+        }
+        validatePricing(lecture.getPricingType(), lecture.getPrice());
+        if (lecture.getEnrollmentStartsAt() != null && now.isBefore(lecture.getEnrollmentStartsAt())) {
+            throw new IllegalArgumentException("아직 강의 모집이 시작되지 않았습니다.");
+        }
+        if (lecture.getEnrollmentEndsAt() != null && now.isAfter(lecture.getEnrollmentEndsAt())) {
+            throw new IllegalArgumentException("강의 모집기간이 종료되었습니다.");
+        }
+    }
+
     public List<LectureAttachment> attachmentList(Long lectureId) {
         return attachments.findByLectureIdOrderByIdAsc(lectureId);
     }
@@ -194,7 +231,16 @@ public class LectureService {
             MultipartFile video,
             MultipartFile[] introFiles,
             String thumbnailSelection,
-            MultipartFile[] attachmentFiles) {
+            MultipartFile[] attachmentFiles,
+            String introImageOrder,
+            String instructorName,
+            String instructorBiography,
+            List<String> instructorCareers,
+            MultipartFile[] instructorFiles,
+            String instructorImageOrder,
+            LocalDateTime enrollmentStartsAt,
+            LocalDateTime enrollmentEndsAt,
+            LocalDateTime lectureStartsAt) {
 
         if (video == null || video.isEmpty()) {
             throw new IllegalArgumentException("영상 파일은 필수입니다.");
@@ -207,13 +253,19 @@ public class LectureService {
 
         Lecture lecture = new Lecture();
         applyMeta(lecture, title, description, pricingType, price, viewingDays, status);
+        applyInstructorAndSchedule(lecture, instructorName, instructorBiography, instructorCareers,
+                enrollmentStartsAt, enrollmentEndsAt, lectureStartsAt);
         lectures.save(lecture);
 
         applyNormalizedVideo(lecture, video, null);
 
         saveTags(lecture, tagText);
         List<LectureIntroImage> savedIntroImages = saveIntroFiles(lecture, introFiles, 0);
+        applyIntroImageOrder(lecture.getId(), savedIntroImages, introImageOrder);
         applyThumbnailSelection(lecture.getId(), savedIntroImages, thumbnailSelection);
+        List<LectureInstructorImage> savedInstructorImages = saveInstructorFiles(lecture, instructorFiles, 0);
+        applyInstructorImageOrder(lecture.getId(), savedInstructorImages, instructorImageOrder);
+        validatePublishableAssets(lecture);
         saveAttachments(lecture, attachmentFiles);
         return lecture;
     }
@@ -233,11 +285,23 @@ public class LectureService {
             String thumbnailSelection,
             MultipartFile[] newAttachmentFiles,
             List<Long> deleteImageIds,
-            List<Long> deleteAttachmentIds) {
+            List<Long> deleteAttachmentIds,
+            String introImageOrder,
+            String instructorName,
+            String instructorBiography,
+            List<String> instructorCareers,
+            MultipartFile[] instructorFiles,
+            List<Long> deleteInstructorImageIds,
+            String instructorImageOrder,
+            LocalDateTime enrollmentStartsAt,
+            LocalDateTime enrollmentEndsAt,
+            LocalDateTime lectureStartsAt) {
 
         Lecture lecture = get(id);
         validatePricing(pricingType, price);
         applyMeta(lecture, title, description, pricingType, price, viewingDays, status);
+        applyInstructorAndSchedule(lecture, instructorName, instructorBiography, instructorCareers,
+                enrollmentStartsAt, enrollmentEndsAt, lectureStartsAt);
 
         // 기존 태그 삭제와 신규 태그 INSERT가 같은 트랜잭션에서 실행될 때
         // IDENTITY 기반 신규 INSERT가 먼저 실행되면 uk_lecture_tag(lecture_id, name)에
@@ -278,9 +342,24 @@ public class LectureService {
             }
         }
 
+        if (deleteInstructorImageIds != null) {
+            for (Long imageId : new LinkedHashSet<>(deleteInstructorImageIds)) {
+                instructorImageRepository.findByIdAndLectureId(imageId, id).ifPresent(image -> {
+                    instructorImageRepository.delete(image);
+                    fileCleanup.deleteAfterCommit(image.getFilePath());
+                });
+            }
+            instructorImageRepository.flush();
+        }
+
         int startOrder = images.findByLectureIdOrderByDisplayOrderAsc(id).size();
         List<LectureIntroImage> savedNewImages = saveIntroFiles(lecture, newIntroFiles, startOrder);
+        applyIntroImageOrder(id, savedNewImages, introImageOrder);
         applyThumbnailSelection(id, savedNewImages, thumbnailSelection);
+        int instructorStartOrder = instructorImageRepository.findByLectureIdOrderByDisplayOrderAsc(id).size();
+        List<LectureInstructorImage> savedInstructorImages = saveInstructorFiles(lecture, instructorFiles, instructorStartOrder);
+        applyInstructorImageOrder(id, savedInstructorImages, instructorImageOrder);
+        validatePublishableAssets(lecture);
         saveAttachments(lecture, newAttachmentFiles);
         return lecture;
     }
@@ -293,7 +372,7 @@ public class LectureService {
     }
 
     public long purchaseCount(Long lectureId) {
-        return payments.countByLectureIdAndStatus(lectureId, PaymentStatus.PAID);
+        return payments.countByLectureIdAndStatusIn(lectureId, List.of(PaymentStatus.PAID, PaymentStatus.PARTIALLY_REFUNDED));
     }
 
     /**
@@ -341,11 +420,17 @@ public class LectureService {
         if (title == null || title.isBlank()) {
             throw new IllegalArgumentException("영상 제목은 필수입니다.");
         }
+        if (title.trim().length() > 200) {
+            throw new IllegalArgumentException("영상 제목은 200자까지 입력할 수 있습니다.");
+        }
+        if (status == null) {
+            throw new IllegalArgumentException("강의 공개 상태를 선택해주세요.");
+        }
         if (description == null || description.isBlank()) {
             throw new IllegalArgumentException("영상 설명은 필수입니다.");
         }
-        if (viewingDays != null && viewingDays <= 0) {
-            throw new IllegalArgumentException("시청 가능일은 1일 이상이거나 비워주세요.");
+        if (viewingDays != null && (viewingDays <= 0 || viewingDays > 36500)) {
+            throw new IllegalArgumentException("시청 가능일은 1~36,500일이거나 무제한으로 설정해주세요.");
         }
 
         lecture.setTitle(title.trim());
@@ -367,9 +452,148 @@ public class LectureService {
         if (type == null) {
             throw new IllegalArgumentException("무료/유료 구분을 선택해주세요.");
         }
-        if (type == PricingType.PAID && (price == null || price.signum() <= 0)) {
-            throw new IllegalArgumentException("유료 영상은 0원보다 큰 가격이 필요합니다.");
+        if (type == PricingType.PAID && (price == null || price.compareTo(BigDecimal.valueOf(100)) < 0)) {
+            throw new IllegalArgumentException("카드 결제가 가능한 유료 강의의 최소 가격은 100원입니다.");
         }
+        if (type == PricingType.PAID && (price.stripTrailingZeros().scale() > 0 || price.precision() - price.scale() > 14)) {
+            throw new IllegalArgumentException("가격은 소수점 없는 원 단위로 입력해주세요.");
+        }
+    }
+
+    private void applyInstructorAndSchedule(
+            Lecture lecture, String instructorName, String biography, List<String> careers,
+            LocalDateTime enrollmentStartsAt, LocalDateTime enrollmentEndsAt, LocalDateTime lectureStartsAt) {
+        String name = instructorName == null ? "" : instructorName.trim();
+        String normalizedBiography = biography == null ? "" : biography.trim();
+        if (name.length() > 100) throw new IllegalArgumentException("강사 실명은 100자까지 입력할 수 있습니다.");
+        if (normalizedBiography.length() > 10000) throw new IllegalArgumentException("강사 약력은 10,000자까지 입력할 수 있습니다.");
+        List<String> normalizedCareers = new ArrayList<>();
+        if (careers != null) {
+            for (String career : careers) {
+                if (career == null || career.isBlank()) continue;
+                String value = career.trim();
+                if (value.length() > 500) throw new IllegalArgumentException("강사 이력은 항목당 500자까지 입력할 수 있습니다.");
+                normalizedCareers.add(value);
+            }
+        }
+        if (normalizedCareers.size() > 30) throw new IllegalArgumentException("강사 이력은 최대 30개까지 등록할 수 있습니다.");
+        if (lecture.getStatus() == LectureStatus.PUBLISHED && (name.isEmpty() || normalizedCareers.isEmpty())) {
+            throw new IllegalArgumentException("강의를 공개하려면 실제 강사 실명과 이력을 1개 이상 입력해주세요.");
+        }
+        if ((enrollmentStartsAt == null) != (enrollmentEndsAt == null)) {
+            throw new IllegalArgumentException("기간 한정 모집은 시작일과 종료일을 모두 입력해주세요. 상시 모집은 둘 다 비워주세요.");
+        }
+        if (enrollmentStartsAt != null && !enrollmentStartsAt.isBefore(enrollmentEndsAt)) {
+            throw new IllegalArgumentException("모집 종료일은 모집 시작일보다 이후여야 합니다.");
+        }
+        lecture.setInstructorName(name.isEmpty() ? null : name);
+        lecture.setInstructorBiography(normalizedBiography.isEmpty() ? null : normalizedBiography);
+        lecture.getInstructorCareers().clear();
+        lecture.getInstructorCareers().addAll(normalizedCareers);
+        lecture.setEnrollmentStartsAt(enrollmentStartsAt);
+        lecture.setEnrollmentEndsAt(enrollmentEndsAt);
+        lecture.setLectureStartsAt(lectureStartsAt);
+    }
+
+    private void validatePublishableAssets(Lecture lecture) {
+        if (lecture.getStatus() == LectureStatus.PUBLISHED
+                && (lecture.getVideoPath() == null || lecture.getVideoPath().isBlank() || lecture.getDurationSeconds() <= 0)) {
+            throw new IllegalArgumentException("강의를 공개하려면 재생 가능한 영상을 등록해주세요.");
+        }
+        if (instructorImageRepository.findByLectureIdOrderByDisplayOrderAsc(lecture.getId()).size() > 20) {
+            throw new IllegalArgumentException("강사 사진은 최대 20장까지 등록할 수 있습니다.");
+        }
+    }
+
+    private void validateImageFile(MultipartFile file, String label) {
+        if (file.getSize() > 15L * 1024 * 1024) {
+            throw new IllegalArgumentException(label + "는 장당 15MB 이하로 등록해주세요.");
+        }
+        String filename = file.getOriginalFilename();
+        if (filename == null || !filename.toLowerCase(java.util.Locale.ROOT).matches(".*\\.(jpe?g|png|gif)$")) {
+            throw new IllegalArgumentException(label + "는 편집 완료된 JPG, PNG, GIF 파일로 등록해주세요.");
+        }
+        try (var source = file.getInputStream(); ImageInputStream input = ImageIO.createImageInputStream(source)) {
+            if (input == null) throw new IllegalArgumentException(label + " 파일을 읽을 수 없습니다.");
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
+            if (!readers.hasNext()) throw new IllegalArgumentException(label + "의 실제 이미지 형식을 확인해주세요.");
+            ImageReader reader = readers.next();
+            try {
+                reader.setInput(input, true, true);
+                int width = reader.getWidth(0), height = reader.getHeight(0);
+                if (width <= 0 || height <= 0 || (long) width * height > 40_000_000L) {
+                    throw new IllegalArgumentException(label + " 해상도는 4,000만 화소 이내로 등록해주세요.");
+                }
+            } finally {
+                reader.dispose();
+            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException(label + "가 손상되었거나 읽을 수 없는 파일입니다.", e);
+        }
+    }
+
+    private List<LectureInstructorImage> saveInstructorFiles(Lecture lecture, MultipartFile[] files, int startOrder) {
+        List<LectureInstructorImage> saved = new ArrayList<>();
+        if (files == null) return saved;
+        int order = startOrder;
+        for (MultipartFile file : files) {
+            if (file == null || file.isEmpty()) continue;
+            validateImageFile(file, "강사 사진");
+            var stored = storage.store(file, "lectures/" + lecture.getId() + "/instructors");
+            fileCleanup.deleteOnRollback(stored.relativePath());
+            LectureInstructorImage image = new LectureInstructorImage();
+            image.setLecture(lecture);
+            image.setFilePath(stored.relativePath());
+            image.setOriginalName(stored.originalName());
+            image.setDisplayOrder(order++);
+            saved.add(instructorImageRepository.save(image));
+        }
+        return saved;
+    }
+
+    private void applyIntroImageOrder(Long lectureId, List<LectureIntroImage> newlySaved, String orderText) {
+        List<LectureIntroImage> all = new ArrayList<>(images.findByLectureIdOrderByDisplayOrderAsc(lectureId));
+        if (orderText == null || orderText.isBlank()) return;
+        List<LectureIntroImage> ordered = new ArrayList<>();
+        for (String token : orderText.split(",")) {
+            LectureIntroImage image = resolveThumbnailSelection(all, newlySaved, token.trim());
+            if (ordered.stream().anyMatch(row -> sameImage(row, image))) {
+                throw new IllegalArgumentException("소개 이미지 순서에 같은 이미지가 중복되었습니다.");
+            }
+            ordered.add(image);
+        }
+        all.stream().filter(image -> ordered.stream().noneMatch(row -> sameImage(row, image))).forEach(ordered::add);
+        for (int index = 0; index < ordered.size(); index++) ordered.get(index).setDisplayOrder(index);
+        images.saveAll(ordered);
+    }
+
+    private void applyInstructorImageOrder(Long lectureId, List<LectureInstructorImage> newlySaved, String orderText) {
+        List<LectureInstructorImage> all = new ArrayList<>(instructorImageRepository.findByLectureIdOrderByDisplayOrderAsc(lectureId));
+        List<LectureInstructorImage> ordered = new ArrayList<>();
+        if (orderText != null && !orderText.isBlank()) {
+            for (String value : orderText.split(",")) {
+                String token = value.trim();
+                LectureInstructorImage selected;
+                if (token.startsWith("existing:")) {
+                    Long id = parseLong(token.substring("existing:".length()), "강사 사진 순서 형식을 확인해주세요.");
+                    selected = all.stream().filter(row -> Objects.equals(row.getId(), id)).findFirst()
+                            .orElseThrow(() -> new IllegalArgumentException("강사 사진 순서에 삭제되었거나 다른 강의의 사진이 있습니다."));
+                } else if (token.startsWith("new:")) {
+                    int index = parseInt(token.substring("new:".length()), "강사 사진 순서 형식을 확인해주세요.");
+                    if (index < 0 || index >= newlySaved.size()) throw new IllegalArgumentException("새 강사 사진 순서를 확인해주세요.");
+                    selected = newlySaved.get(index);
+                } else {
+                    throw new IllegalArgumentException("강사 사진 순서 형식을 확인해주세요.");
+                }
+                if (ordered.stream().anyMatch(row -> Objects.equals(row.getId(), selected.getId()))) {
+                    throw new IllegalArgumentException("강사 사진 순서에 같은 이미지가 중복되었습니다.");
+                }
+                ordered.add(selected);
+            }
+        }
+        all.stream().filter(image -> ordered.stream().noneMatch(row -> Objects.equals(row.getId(), image.getId()))).forEach(ordered::add);
+        for (int index = 0; index < ordered.size(); index++) ordered.get(index).setDisplayOrder(index);
+        instructorImageRepository.saveAll(ordered);
     }
 
     private void saveTags(Lecture lecture, String tagText) {
@@ -407,10 +631,7 @@ public class LectureService {
                 continue;
             }
 
-            String type = file.getContentType();
-            if (type == null || !type.startsWith("image/")) {
-                throw new IllegalArgumentException("소개 이미지는 이미지 파일만 등록할 수 있습니다.");
-            }
+            validateImageFile(file, "소개 이미지");
 
             var stored = storage.store(file, "lectures/" + lecture.getId() + "/intro");
             fileCleanup.deleteOnRollback(stored.relativePath());

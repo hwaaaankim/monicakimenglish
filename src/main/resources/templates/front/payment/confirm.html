@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{front/fragments/common :: head('결제 확인')}"></head>
+<body class="stretched mk-platform-page"><div id="wrapper" class="clearfix">
+<th:block th:replace="~{front/fragments/common :: header}"></th:block>
+<main class="mk-my-page mk-payment-page"><div class="container"><section class="mk-checkout-card mk-payment-result">
+    <div class="mk-payment-spinner" aria-hidden="true"></div><h1>결제 결과를 확인하고 있습니다</h1><p>승인이 완료되면 강의가 자동 등록됩니다. 잠시만 기다려 주세요.</p>
+    <div id="confirmationError" class="mk-payment-error" role="alert" hidden></div>
+    <button id="paymentRetry" class="mk-primary-btn" type="button" hidden>같은 주문으로 다시 확인</button>
+    <a class="mk-secondary-btn mt-2" href="/my/payments">내 결제내역 확인</a>
+    <div id="tossConfirmation" th:attr="data-confirm-url=@{/payments/toss/confirm},data-order-id=${payment.orderNo},data-payment-key=${paymentKey},data-amount=${callbackAmount}"></div>
+</section></div></main>
+<th:block th:replace="~{front/fragments/common :: footer}"></th:block></div>
+<th:block th:replace="~{front/fragments/common :: script}"></th:block>
+<link rel="stylesheet" th:href="@{/front/css/payment.css(v='20261013-1')}"><script th:src="@{/front/js/payment.js(v='20261013-1')}"></script>
+</body></html>

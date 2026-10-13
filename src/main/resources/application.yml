@@ -2,7 +2,7 @@ spring:
   application:
     name: MonicaKimEnglish
   profiles:
-    active: test
+    active: prod
   jpa:
     open-in-view: false
     hibernate:

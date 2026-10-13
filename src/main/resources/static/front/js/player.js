@@ -55,14 +55,22 @@
   var isScrubbing = false;
   var pendingRestore = null;
   var speedSteps = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
-  var viewerScope = String(shell.dataset.watermark || "viewer").trim().toLowerCase();
   var settingsStorageKey = "mk.player.settings.v2";
-  var bookmarkStorageKey = "mk.player.bookmarks.v2." + encodeURIComponent(viewerScope) + "." + encodeURIComponent(lectureId);
   var bookmarks = [];
+  var heartbeatSequence = 0;
+  var playbackSegments = [];
+  var lastMediaPosition = null;
+  var sendingHeartbeat = false;
+  var retryHeartbeat = null;
+  var pendingEnded = false;
+  var bookmarkBusy = false;
+  var bookmarkDialog = document.getElementById("playerBookmarkDialog");
+  var requestedPosition = new URLSearchParams(window.location.search).get("t");
+  requestedPosition = requestedPosition !== null && Number.isFinite(Number(requestedPosition)) && Number(requestedPosition) >= 0 ? Number(requestedPosition) : null;
   var playerSettings = loadPlayerSettings();
 
   applyPlayerSettings();
-  loadBookmarks();
+  loadLearningSummary();
   installCasualProtection();
   installWatermark();
   bindControls();
@@ -85,8 +93,12 @@
 
       var data = await response.json();
       sessionKey = data.sessionKey || null;
+      heartbeatSequence = 0;
+      retryHeartbeat = null;
+      playbackSegments = [];
+      lastMediaPosition = null;
       playbackUrl = data.playbackUrl || null;
-      resumePosition = Number(data.lastPositionSeconds || 0);
+      resumePosition = requestedPosition !== null ? requestedPosition : Number(data.lastPositionSeconds || 0);
 
       if (!sessionKey || !playbackUrl) {
         throw new Error("player session response is incomplete");
@@ -177,10 +189,10 @@
         var restore = pendingRestore;
         pendingRestore = null;
 
-        var maxPosition = Math.max(0, (video.duration || 0) - 3);
+        var maxPosition = Math.max(0, (video.duration || 0) - 0.1);
         var target = Math.min(Math.max(0, restore.time), maxPosition);
 
-        if (target >= 5) {
+        if (target > 0) {
           try {
             video.currentTime = target;
           } catch (ignored) {
@@ -206,6 +218,7 @@
       setLoading(false);
       updatePlayState();
       lastTick = performance.now();
+      lastMediaPosition = Number(video.currentTime || 0);
       ensureHeartbeatTimer();
       scheduleControlsHide();
     });
@@ -245,29 +258,45 @@
     });
 
     video.addEventListener("seeking", function () {
+      lastMediaPosition = null;
       setLoading(true, "이동한 위치를 불러오고 있습니다.");
     });
 
     video.addEventListener("seeked", function () {
       setLoading(false);
       lastTick = performance.now();
+      lastMediaPosition = Number(video.currentTime || 0);
     });
 
     video.addEventListener("timeupdate", function () {
-      if (!video.paused && !video.seeking) {
-        var now = performance.now();
-        var delta = (now - lastTick) / 1000;
-        if (delta > 0 && delta < 2.5) {
-          playedDelta += delta;
+      var now = performance.now();
+      var current = Number(video.currentTime || 0);
+      var wallDelta = (now - lastTick) / 1000;
+      if (!video.paused && !video.seeking && video.readyState >= 2 && !document.hidden && lastMediaPosition !== null) {
+        var mediaDelta = current - lastMediaPosition;
+        var expectedDelta = Math.max(0, wallDelta) * Number(video.playbackRate || 1);
+        // Only contiguous media actually played is counted. Seeking never bridges an unseen interval.
+        if (wallDelta > 0 && wallDelta < 2.5 && mediaDelta > 0 && mediaDelta <= expectedDelta + 0.6) {
+          playedDelta += wallDelta;
+          appendPlaybackSegment(lastMediaPosition, current, wallDelta);
         }
-        lastTick = now;
       }
-
-      if (!isScrubbing) {
-        updateSeekUI();
-      }
-      currentTimeEl.textContent = formatTime(video.currentTime);
+      lastTick = now;
+      lastMediaPosition = !video.seeking ? current : null;
+      if (!isScrubbing) updateSeekUI();
+      currentTimeEl.textContent = formatTime(current);
     });
+
+    function appendPlaybackSegment(start, end, wallSeconds) {
+      var previous = playbackSegments[playbackSegments.length - 1];
+      if (previous && Math.abs(previous.endSeconds - start) < 0.25) {
+        previous.endSeconds = end;
+        previous.wallSeconds += wallSeconds;
+        previous.maxRate = Math.max(previous.maxRate, Number(video.playbackRate || 1));
+      } else if (playbackSegments.length < 64) {
+        playbackSegments.push({ startSeconds: start, endSeconds: end, wallSeconds: wallSeconds, maxRate: Number(video.playbackRate || 1) });
+      }
+    }
 
     video.addEventListener("progress", updateBufferedUI);
     video.addEventListener("durationchange", function () {
@@ -276,6 +305,8 @@
     });
 
     video.addEventListener("ratechange", function () {
+      lastTick = performance.now();
+      lastMediaPosition = Number(video.currentTime || 0);
       var currentRate = Number(video.playbackRate || 1);
       if (speedSteps.indexOf(currentRate) >= 0) {
         playerSettings.rate = currentRate;
@@ -341,6 +372,10 @@
         // 백그라운드에서 시간 누적이 과하게 발생하지 않도록 즉시 현재까지를 기록합니다.
         sendHeartbeat(false);
         lastTick = performance.now();
+        lastMediaPosition = null;
+      } else {
+        lastTick = performance.now();
+        lastMediaPosition = Number(video.currentTime || 0);
       }
     });
   }
@@ -418,6 +453,11 @@
       });
     }
 
+    if (bookmarkDialog) {
+      document.getElementById("bookmarkEditorForm").addEventListener("submit", saveBookmark);
+      bookmarkDialog.querySelectorAll("[data-close-bookmark-editor]").forEach(function (button) { button.addEventListener("click", function () { if (!bookmarkBusy) bookmarkDialog.close(); }); });
+    }
+
     if (bookmarkAddBtn) {
       bookmarkAddBtn.addEventListener("click", function () {
         addBookmark();
@@ -435,6 +475,8 @@
       bookmarkList.addEventListener("click", function (event) {
         var seekButton = event.target.closest("[data-bookmark-seek]");
         var deleteButton = event.target.closest("[data-bookmark-delete]");
+        var editButton = event.target.closest("[data-bookmark-edit]");
+        if (editButton) { event.stopPropagation(); openBookmarkEditor(editButton.dataset.bookmarkEdit); return; }
 
         if (deleteButton) {
           event.stopPropagation();
@@ -537,6 +579,8 @@
         || (modifier && key === "s")
         || (modifier && key === "p")
         || key === "printscreen";
+
+      if (bookmarkDialog && bookmarkDialog.open) return;
 
       if (devtoolsShortcut) {
         event.preventDefault();
@@ -730,104 +774,114 @@
   }
 
   function formatRate(rate) {
-    return Number(rate).toFixed(Number(rate) % 1 === 0 ? 0 : 2).replace(/0$/, "") + "×";
+    return String(Number(rate)) + "×";
   }
 
-  function loadBookmarks() {
-    bookmarks = [];
-    var raw = safeLocalStorageGet(bookmarkStorageKey);
-    if (!raw) {
-      return;
-    }
+  async function loadLearningSummary() {
     try {
-      var parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) {
-        return;
-      }
-      bookmarks = parsed
-        .filter(function (item) {
-          return item && typeof item.id === "string" && Number.isFinite(Number(item.time)) && Number(item.time) >= 0;
-        })
-        .map(function (item) {
-          return {
-            id: item.id,
-            time: Number(item.time),
-            label: typeof item.label === "string" && item.label.trim() ? item.label.trim().slice(0, 60) : "책갈피",
-            createdAt: Number(item.createdAt || Date.now())
-          };
-        })
-        .sort(function (a, b) { return a.time - b.time; })
-        .slice(0, 50);
-    } catch (error) {
-      bookmarks = [];
-    }
-  }
-
-  function saveBookmarks() {
-    safeLocalStorageSet(bookmarkStorageKey, JSON.stringify(bookmarks.slice(0, 50)));
-  }
-
-  function addBookmark() {
-    var time = Number(video.currentTime || 0);
-    var duration = Number(video.duration || 0);
-    if (!Number.isFinite(time) || duration <= 0) {
-      showSecurityToast("영상이 준비된 뒤 책갈피를 추가할 수 있습니다.");
-      return;
-    }
-
-    var duplicate = bookmarks.some(function (item) {
-      return Math.abs(item.time - time) < 2;
-    });
-    if (duplicate) {
-      showSecurityToast("현재 위치 근처에 이미 책갈피가 있습니다.");
-      return;
-    }
-
-    if (bookmarks.length >= 50) {
-      showSecurityToast("책갈피는 강의당 최대 50개까지 저장할 수 있습니다.");
-      return;
-    }
-
-    var rounded = Math.max(0, Math.round(time));
-    bookmarks.push({
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
-      time: rounded,
-      label: "책갈피 " + (bookmarks.length + 1),
-      createdAt: Date.now()
-    });
-    bookmarks.sort(function (a, b) { return a.time - b.time; });
-    saveBookmarks();
-    renderBookmarks();
-    showSecurityToast(formatTime(rounded) + " 위치를 책갈피에 저장했습니다.");
-  }
-
-  function removeBookmark(id) {
-    var before = bookmarks.length;
-    bookmarks = bookmarks.filter(function (item) { return item.id !== id; });
-    if (bookmarks.length !== before) {
-      saveBookmarks();
+      var response = await window.MK.fetch("/api/player/" + encodeURIComponent(lectureId) + "/learning-summary");
+      if (!response.ok) throw new Error("learning summary " + response.status);
+      var data = await response.json();
+      bookmarks = (Array.isArray(data.bookmarks) ? data.bookmarks : []).map(function (item) {
+        return { id: String(item.id), time: Number(item.positionSeconds || 0), label: String(item.label || "책갈피"), thumbnailUrl: item.thumbnailUrl || null };
+      }).slice(0, 5);
       renderBookmarks();
-      showSecurityToast("책갈피를 삭제했습니다.");
+      renderSavedLearning(data);
+    } catch (error) {
+      var status = document.getElementById("playerLearningNotice");
+      if (status) status.textContent = "학습 기록을 불러오지 못했습니다. 새로고침 후 다시 확인해 주세요.";
     }
+  }
+
+  function renderSavedLearning(data) {
+    var content = document.getElementById("playerLearningContent");
+    if (!content) return;
+    var records = [];
+    if (data.lastWatchedAt) records.push({ position: Number(data.lastPositionSeconds), label: "마지막 시청 위치", image: data.lastThumbnailUrl, last: true });
+    bookmarks.forEach(function (item) { records.push({ position: item.time, label: item.label, image: item.thumbnailUrl, id: item.id }); });
+    content.replaceChildren();
+    if (!records.length) {
+      var empty = document.createElement("p");
+      empty.className = "mk-learning-empty";
+      empty.textContent = "시청한 위치는 자동으로 저장됩니다. 기억하고 싶은 장면에는 책갈피를 추가해 보세요.";
+      content.appendChild(empty);
+      return;
+    }
+    records.forEach(function (record) {
+      var card = document.createElement("div"); card.className = "mk-learning-point";
+      var button = document.createElement("button"); button.type = "button"; button.className = "mk-learning-point-link";
+      var media = document.createElement("span"); media.className = "mk-learning-point-media";
+      var placeholder = document.createElement("span"); placeholder.textContent = record.last ? "이어보기" : "책갈피"; media.appendChild(placeholder);
+      if (record.image) { var img = document.createElement("img"); img.src = record.image; img.alt = ""; img.loading = "lazy"; img.addEventListener("error", function () { img.remove(); }); media.appendChild(img); }
+      var time = document.createElement("b"); time.textContent = formatTime(record.position); media.appendChild(time);
+      var title = document.createElement("strong"); title.textContent = record.label; button.append(media, title);
+      button.addEventListener("click", function () { video.currentTime = clamp(record.position, 0, Math.max(0, Number(video.duration || record.position))); safePlay(); shell.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" }); });
+      card.appendChild(button);
+      if (record.id) { var actions = document.createElement("div"); actions.className = "mk-learning-point-actions";
+        var rename = document.createElement("button"); rename.type = "button"; rename.textContent = "이름 수정"; rename.addEventListener("click", function () { openBookmarkEditor(record.id); });
+        var remove = document.createElement("button"); remove.type = "button"; remove.textContent = "삭제"; remove.addEventListener("click", function () { removeBookmark(record.id); }); actions.append(rename, remove); card.appendChild(actions); }
+      content.appendChild(card);
+    });
+  }
+
+  function addBookmark() { openBookmarkEditor(null); }
+
+  function openBookmarkEditor(id) {
+    if (bookmarkBusy || !bookmarkDialog) return;
+    var item = id ? bookmarks.find(function (entry) { return entry.id === String(id); }) : null;
+    if (!id && (!Number.isFinite(video.duration) || video.duration <= 0)) { showSecurityToast("영상이 준비된 뒤 책갈피를 추가할 수 있습니다."); return; }
+    if (!id && bookmarks.length >= 5) { showSecurityToast("책갈피는 강의당 최대 5개입니다. 기존 책갈피를 삭제한 후 추가해 주세요."); return; }
+    if (!id && bookmarks.some(function (entry) { return Math.abs(entry.time - video.currentTime) < 2; })) { showSecurityToast("현재 위치 근처에 이미 책갈피가 있습니다."); return; }
+    bookmarkDialog.dataset.bookmarkId = item ? item.id : "";
+    bookmarkDialog.dataset.position = String(item ? item.time : Math.floor(video.currentTime || 0));
+    document.getElementById("bookmarkEditorTitle").textContent = item ? "책갈피 이름 수정" : "현재 장면 책갈피 추가";
+    document.getElementById("bookmarkEditorTime").textContent = formatTime(Number(bookmarkDialog.dataset.position));
+    var input = document.getElementById("bookmarkLabelInput"); input.value = item ? item.label : "책갈피 " + (bookmarks.length + 1);
+    document.getElementById("bookmarkEditorError").textContent = "";
+    if (document.fullscreenElement === shell) shell.appendChild(bookmarkDialog);
+    bookmarkDialog.showModal(); input.focus(); input.select();
+  }
+
+  async function saveBookmark(event) {
+    event.preventDefault();
+    if (bookmarkBusy) return;
+    var id = bookmarkDialog.dataset.bookmarkId;
+    var label = document.getElementById("bookmarkLabelInput").value.trim();
+    if (!label) { document.getElementById("bookmarkEditorError").textContent = "책갈피 이름을 입력해 주세요."; return; }
+    bookmarkBusy = true;
+    var button = document.getElementById("bookmarkSaveButton"); button.disabled = true;
+    try {
+      var url = "/api/player/" + encodeURIComponent(lectureId) + "/bookmarks" + (id ? "/" + encodeURIComponent(id) : "");
+      var response = await window.MK.fetch(url, { method: id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ positionSeconds: Number(bookmarkDialog.dataset.position), label: label }) });
+      if (!response.ok) { var errorData = await response.json().catch(function () { return {}; }); throw new Error(errorData.message || "책갈피를 저장하지 못했습니다."); }
+      bookmarkDialog.close(); await loadLearningSummary(); showSecurityToast(id ? "책갈피 이름을 수정했습니다." : "현재 장면을 책갈피에 저장했습니다.");
+    } catch (error) { document.getElementById("bookmarkEditorError").textContent = error.message; }
+    finally { bookmarkBusy = false; button.disabled = false; }
+  }
+
+  async function removeBookmark(id) {
+    if (bookmarkBusy) return;
+    bookmarkBusy = true;
+    try {
+      var response = await window.MK.fetch("/api/player/" + encodeURIComponent(lectureId) + "/bookmarks/" + encodeURIComponent(id), { method: "DELETE" });
+      if (!response.ok) throw new Error("책갈피를 삭제하지 못했습니다.");
+      await loadLearningSummary(); showSecurityToast("책갈피를 삭제했습니다.");
+    } catch (error) { showSecurityToast(error.message); }
+    finally { bookmarkBusy = false; }
   }
 
   function renderBookmarks() {
-    if (bookmarkCount) {
-      bookmarkCount.textContent = String(bookmarks.length);
-    }
-    if (bookmarkEmpty) {
-      bookmarkEmpty.hidden = bookmarks.length > 0;
-    }
+    if (bookmarkCount) bookmarkCount.textContent = String(bookmarks.length) + "/5";
+    if (bookmarkEmpty) bookmarkEmpty.hidden = bookmarks.length > 0;
     if (bookmarkList) {
       bookmarkList.innerHTML = bookmarks.map(function (item) {
-        return '<div class="mk-player-bookmark-row">'
-          + '<button type="button" class="mk-player-bookmark-seek" data-bookmark-seek="' + item.time + '">'
-          + '<span class="mk-player-bookmark-time">' + escapeHtml(formatTime(item.time)) + '</span>'
-          + '<span class="mk-player-bookmark-label">' + escapeHtml(item.label) + '</span>'
-          + '</button>'
-          + '<button type="button" class="mk-player-bookmark-delete" data-bookmark-delete="' + escapeHtml(item.id) + '" aria-label="책갈피 삭제">×</button>'
-          + '</div>';
+        return '<div class="mk-player-bookmark-row"><button type="button" class="mk-player-bookmark-seek" data-bookmark-seek="' + item.time + '">'
+          + (item.thumbnailUrl ? '<img class="mk-bookmark-mini-thumbnail" src="' + escapeHtml(item.thumbnailUrl) + '" alt="" loading="lazy">' : '')
+          + '<span class="mk-player-bookmark-time">' + escapeHtml(formatTime(item.time)) + '</span><span class="mk-player-bookmark-label">' + escapeHtml(item.label) + '</span></button>'
+          + '<button type="button" class="mk-player-bookmark-delete" data-bookmark-edit="' + escapeHtml(item.id) + '" aria-label="책갈피 이름 수정">✎</button>'
+          + '<button type="button" class="mk-player-bookmark-delete" data-bookmark-delete="' + escapeHtml(item.id) + '" aria-label="책갈피 삭제">×</button></div>';
       }).join("");
+      bookmarkList.querySelectorAll("img").forEach(function (img) { img.addEventListener("error", function () { img.remove(); }); });
     }
     renderBookmarkMarkers();
   }
@@ -1074,68 +1128,76 @@
     }
   }
 
+  function heartbeatPayload(ended) {
+    var allowance = Math.min(playedDelta, 20);
+    var consumed = 0;
+    var segments = [];
+    var maximumRate = 0.5;
+    // Keep unsent intervals after a failed connection; send only a bounded wall-time batch.
+    while (playbackSegments.length && consumed < allowance && segments.length < 64) {
+      var segment = playbackSegments[0];
+      var wallSeconds = Math.min(segment.wallSeconds, allowance - consumed);
+      if (wallSeconds <= 0) { playbackSegments.shift(); continue; }
+      var end = segment.startSeconds + (segment.endSeconds - segment.startSeconds) * (wallSeconds / segment.wallSeconds);
+      segments.push({ startSeconds: segment.startSeconds, endSeconds: end });
+      maximumRate = Math.max(maximumRate, segment.maxRate);
+      consumed += wallSeconds;
+      if (wallSeconds >= segment.wallSeconds - 0.00001) playbackSegments.shift();
+      else { segment.startSeconds = end; segment.wallSeconds -= wallSeconds; }
+    }
+    playedDelta = Math.max(0, playedDelta - consumed);
+    return {
+      sessionKey: sessionKey,
+      currentTime: Number(video.currentTime || 0),
+      duration: Number.isFinite(video.duration) ? Number(video.duration) : 0,
+      playedDelta: consumed,
+      ended: Boolean(ended && playbackSegments.length === 0),
+      playbackSegments: segments,
+      playbackRate: segments.length ? maximumRate : Number(video.playbackRate || 1),
+      sequence: ++heartbeatSequence
+    };
+  }
+
   async function sendHeartbeat(ended) {
-    if (!sessionKey) {
-      return;
-    }
-    if (!ended && video.paused && playedDelta < 0.5) {
-      return;
-    }
-
-    var delta = Math.min(playedDelta, 20);
-    playedDelta = 0;
-
+    if (ended) pendingEnded = true;
+    if (!sessionKey || sendingHeartbeat || (!ended && video.paused && playedDelta < 0.05 && !retryHeartbeat && !pendingEnded)) return;
+    sendingHeartbeat = true;
+    var successful = false;
+    var payload = retryHeartbeat || heartbeatPayload(ended || pendingEnded);
+    retryHeartbeat = payload;
     try {
       var response = await window.MK.fetch("/api/player/" + encodeURIComponent(lectureId) + "/heartbeat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionKey: sessionKey,
-          currentTime: Number(video.currentTime || 0),
-          duration: Number(video.duration || 0),
-          playedDelta: delta,
-          ended: Boolean(ended)
-        })
+        method: "POST", keepalive: true, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
       });
-
-      if (response.ok) {
-        var data = await response.json();
-        progressStatus.textContent = data.completed
-          ? "시청완료 · 100%"
-          : "학습 진행률 " + data.progressPercent + "%";
-      } else {
-        playedDelta += delta;
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) { video.pause(); retryHeartbeat = null; showError("수강 권한을 다시 확인해 주세요.", "로그인 상태 또는 수강 기간이 변경되었습니다."); }
+        else throw new Error("heartbeat " + response.status);
+        return;
       }
+      retryHeartbeat = null;
+      successful = true;
+      if (payload.ended) { pendingEnded = false; clearHeartbeatTimer(); }
+      var data = await response.json();
+      progressStatus.textContent = data.completed ? "시청완료 · 100%" : "학습 진행률 " + Number(data.progressPercent || 0) + "%";
+      if (video.paused || ended) loadLearningSummary();
     } catch (error) {
-      playedDelta += delta;
-      progressStatus.textContent = "네트워크 연결 후 학습 기록을 다시 전송합니다.";
+      progressStatus.textContent = "연결 후 학습 기록을 다시 저장합니다.";
+      ensureHeartbeatTimer();
+    } finally {
+      sendingHeartbeat = false;
+      if (successful && pendingEnded) ensureHeartbeatTimer();
     }
   }
 
   function sendFinalHeartbeat() {
-    if (!sessionKey) {
-      return;
-    }
-
+    if (!sessionKey || sendingHeartbeat) return;
     var csrf = window.MK.csrf();
     var headers = { "Content-Type": "application/json" };
-    if (csrf) {
-      headers[csrf.header] = csrf.token;
-    }
-
+    if (csrf) headers[csrf.header] = csrf.token;
+    var payload = retryHeartbeat || heartbeatPayload(Boolean(video.ended));
     fetch("/api/player/" + encodeURIComponent(lectureId) + "/heartbeat", {
-      method: "POST",
-      keepalive: true,
-      headers: headers,
-      body: JSON.stringify({
-        sessionKey: sessionKey,
-        currentTime: Number(video.currentTime || 0),
-        duration: Number(video.duration || 0),
-        playedDelta: Math.min(playedDelta, 20),
-        ended: Boolean(video.ended)
-      })
-    }).catch(function () {
-    });
+      method: "POST", keepalive: true, headers: headers, body: JSON.stringify(payload)
+    }).catch(function () {});
   }
 
   function showSecurityToast(message) {

@@ -6,14 +6,9 @@
 
 	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<meta name="author" content="ATTRACTION" />
-	<link
-		href="https://fonts.googleapis.com/css?family=Lato:300,400,400i,700|Poppins:300,400,500,600,700|PT+Serif:400,400i&display=swap"
-		rel="stylesheet" type="text/css" />
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link
-		href="https://fonts.googleapis.com/css2?family=Bangers&family=Creepster&family=Noto+Sans+KR:wght@100;300;400;500;700;900&family=Single+Day&display=swap"
-		rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="/front/css/bootstrap.css" type="text/css" />
 	<link rel="stylesheet" href="/front/style.css" type="text/css" />
 	<link rel="stylesheet" href="/front/css/dark.css" type="text/css" />
@@ -22,7 +17,7 @@
 	<link rel="stylesheet" href="/front/css/magnific-popup.css" type="text/css" />
 
 	<link rel="stylesheet" href="/front/css/custom.css" type="text/css" />
-	<link rel="stylesheet" href="/front/css/course-platform.css?v=20260825-1" type="text/css" />
+	<link rel="stylesheet" href="/front/css/course-platform.css?v=20261013-2" type="text/css" />
 	<link rel="stylesheet" href="/front/css/index-popup.css?v=20260825-1" type="text/css" />
 	<meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}" />
 	<meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}" />
@@ -34,6 +29,7 @@
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css" />
 	<link rel="stylesheet" href="/front/detail.css?v=20260825-2">
 	<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+	<link href="/front/css/site-polish.css?v=20261013-1" rel="stylesheet">
 	<title th:text="${title}">MonicaKim English</title>
 
 
@@ -49,9 +45,9 @@
 						<div class="header-row">
 							<div id="logo">
 								<a href="/index" class="standard-logo" data-dark-logo="/image/logo-dark.png"><img
-										src="/front/image/logo.png" alt="Logo"></a>
+										src="/front/image/logo.png" alt="Monica Kim English"></a>
 								<a href="/index" class="retina-logo" data-dark-logo="/image/logo-dark@2x.png">
-									<img src="/front/image/logo@2x.png" alt="Logo"></a>
+									<img src="/front/image/logo@2x.png" alt="Monica Kim English"></a>
 							</div>
 
 							<div id="primary-menu-trigger">
@@ -97,30 +93,18 @@
 									<li class="menu-item"><a class="menu-link" href="/index">
 											<div>Monica Kim</div>
 										</a>
-										<ul class="sub-menu-container">
-
-										</ul>
 									</li>
 									<li class="menu-item"><a class="menu-link" href="/program">
 											<div>Programs</div>
 										</a>
-										<ul class="sub-menu-container">
-
-										</ul>
 									</li>
 									<li class="menu-item"><a class="menu-link" href="/member">
 											<div>Members</div>
 										</a>
-										<ul class="sub-menu-container">
-
-										</ul>
 									</li>
 									<li class="menu-item"><a class="menu-link" href="/recruit">
 											<div>Recruit</div>
 										</a>
-										<ul class="sub-menu-container">
-
-										</ul>
 									</li>
 									<li class="menu-item"><a class="menu-link" href="/lectures">
 											<div>영상강의실</div>
@@ -128,16 +112,10 @@
 									<li class="menu-item"><a class="menu-link" href="/client">
 											<div>Client Center</div>
 										</a>
-										<ul class="sub-menu-container">
-
-										</ul>
 									</li>
 									<li class="menu-item"><a class="menu-link" href="/contact">
 											<div>Contact Us</div>
 										</a>
-										<ul class="sub-menu-container">
-
-										</ul>
 									</li>
 								</ul>
 							</nav>
@@ -180,10 +158,9 @@
 						<div class="row col-mb-30">
 
 							<div class="col-md-6 text-center text-md-start">
-								Copyrights &copy; 2022 All Rights Reserved by ATRT.<br>
+								Copyright &copy; <span th:text="${#temporals.year(#temporals.createNow())}">2026</span> Monica Kim English. All Rights Reserved.<br>
 								<div class="copyright-links">
-									<a href="javascript:void(0)">Terms of Use</a> / <a href="javascript:void(0)">Privacy
-										Policy</a> / <a href="/admin/login">관리자페이지</a>
+									<a href="/lecture-guide">영상강의 이용·환불 안내</a> / <a href="/admin/login">관리자페이지</a>
 								</div>
 							</div>
 
@@ -234,6 +211,7 @@
 			var $ = jQuery.noConflict();
 
 			tpj(document).ready(function () {
+				if (!tpj("#rev_slider_579_1").length) return;
 				if (tpj("#rev_slider_579_1").revolution == undefined) {
 					revslider_showDoubleJqueryError("#rev_slider_579_1");
 				} else {
@@ -298,6 +276,7 @@
 			jQuery(window).on('load', function () {
 
 				let $container = $('#posts');
+				if (!$container.length || typeof $container.isotope !== 'function') return;
 
 				function blogTimelineEntries() {
 					$('.post-timeline').find('.entry:not(.entry-date-section)').each(function () {
@@ -329,7 +308,7 @@
 		</script>
 		<script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
 		<script>
-			AOS.init();
+			if (window.AOS) AOS.init({duration: 500, easing: 'ease-out-cubic', once: true, disable: window.matchMedia('(prefers-reduced-motion: reduce)').matches});
 		</script>
 	</th:block>
 </body>

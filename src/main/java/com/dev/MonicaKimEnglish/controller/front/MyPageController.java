@@ -15,6 +15,7 @@ import com.dev.MonicaKimEnglish.model.learning.Enrollment;
 import com.dev.MonicaKimEnglish.repository.learning.EnrollmentRepository;
 import com.dev.MonicaKimEnglish.service.auth.ClientService;
 import com.dev.MonicaKimEnglish.service.learning.WishlistService;
+import com.dev.MonicaKimEnglish.service.learning.EnrollmentFundingPolicy;
 import com.dev.MonicaKimEnglish.service.lecture.LectureService;
 import com.dev.MonicaKimEnglish.service.payment.PaymentService;
 
@@ -29,6 +30,7 @@ public class MyPageController {
     private final LectureService lectureService;
     private final PaymentService payments;
     private final ClientService clients;
+    private final EnrollmentFundingPolicy fundingPolicy;
 
     @GetMapping("/classroom")
     public String classroom(@RequestParam(defaultValue="") String q, @RequestParam(defaultValue="ALL") String access,
@@ -37,12 +39,35 @@ public class MyPageController {
         Long cid = cid(auth);
         Map<Long, Enrollment> latest = new LinkedHashMap<>();
         for (Enrollment e : enrollments.findAllForClient(cid)) latest.putIfAbsent(e.getLecture().getId(), e);
+        LocalDateTime now = LocalDateTime.now();
+        Set<Long> upcoming = new HashSet<>();
+        Set<Long> expired = new HashSet<>();
+        latest.forEach((lectureId, enrollment) -> {
+            if (enrollment.getStatus() == com.dev.MonicaKimEnglish.model.enums.EnrollmentStatus.ACTIVE
+                    && fundingPolicy.isEligible(enrollment)
+                    && enrollment.getStartedAt().isAfter(now)
+                    && (enrollment.getExpiresAt() == null || !enrollment.getExpiresAt().isBefore(now))) {
+                upcoming.add(lectureId);
+            }
+            if (enrollment.getStatus() != com.dev.MonicaKimEnglish.model.enums.EnrollmentStatus.CANCELED
+                    && enrollment.getExpiresAt() != null && enrollment.getExpiresAt().isBefore(now)) {
+                expired.add(lectureId);
+            }
+        });
         List<LectureCardDto> rows = latest.values().stream().map(e -> lectureService.toCard(e.getLecture(), cid))
             .filter(r -> q.isBlank() || r.title().toLowerCase().contains(q.toLowerCase()))
-            .filter(r -> access.equals("ALL") || (access.equals("AVAILABLE") == r.accessAvailable()))
+            .filter(r -> switch (access) {
+                case "AVAILABLE" -> r.accessAvailable();
+                case "UPCOMING" -> upcoming.contains(r.id());
+                case "EXPIRED" -> expired.contains(r.id());
+                default -> true;
+            })
             .filter(r -> progress.equals("ALL") || (progress.equals("COMPLETED") == r.completed()))
             .filter(r -> pricing.equals("ALL") || r.pricingType().name().equals(pricing)).toList();
         model.addAttribute("lectures", rows); model.addAttribute("q", q); model.addAttribute("access", access); model.addAttribute("progress", progress); model.addAttribute("pricing", pricing);
+        model.addAttribute("enrollmentByLecture", latest);
+        model.addAttribute("upcomingLectureIds", upcoming);
+        model.addAttribute("expiredLectureIds", expired);
         return "front/my/classroom";
     }
 

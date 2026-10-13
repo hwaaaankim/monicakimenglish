@@ -13,6 +13,11 @@ import lombok.RequiredArgsConstructor;
 public class HomeController {
     private final HomePopupService popupService;
 
+    @GetMapping("/lecture-guide")
+    public String lectureGuide() {
+        return "front/lecture-guide";
+    }
+
     @GetMapping({ "/index", "/" })
     public String index(Model model) {
         model.addAttribute("homePopups", popupService.activeNow());

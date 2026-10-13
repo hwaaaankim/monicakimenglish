@@ -13,7 +13,7 @@
 			<span class="mk-thumb-shade" aria-hidden="true"></span>
 			<span class="mk-duration"
 				th:text="${T(java.lang.String).format('%02d:%02d', item.durationSeconds / 60, item.durationSeconds % 60)}">00:00</span>
-			<span class="mk-owned-badge" th:if="${item.owned}">보유중</span>
+			<span class="mk-owned-badge" th:if="${item.owned}">수강 이력</span>
 		</a>
 
 		<div class="mk-card-body">
@@ -47,7 +47,8 @@
 			<div class="mk-card-actions">
 				<button type="button" class="mk-secondary-btn mk-quickview-btn"
 					th:attr="data-preview-id=${item.id}">빠른보기</button>
-				<a class="mk-secondary-btn" th:href="@{/lectures/{id}(id=${item.id})}">상세보기</a>
+				<a class="mk-secondary-btn" th:unless="${item.accessAvailable}" th:href="@{/lectures/{id}(id=${item.id})}">상세보기</a>
+            <a class="mk-primary-btn" th:if="${item.accessAvailable}" th:href="@{/watch/{id}(id=${item.id})}">시청하기</a>
 				<button th:if="${currentUser != null and !item.owned}" type="button" class="mk-wish-btn"
 					th:classappend="${item.wished} ? ' active' : ''"
 					th:attr="data-wish-id=${item.id},aria-pressed=${item.wished}" aria-label="찜하기">

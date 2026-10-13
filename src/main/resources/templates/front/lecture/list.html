@@ -11,7 +11,7 @@
 			<div class="container">
 				<span>ONLINE CLASS</span>
 				<h1>영상강의실</h1>
-				<p>원하는 주제와 강의를 찾아보고, 구매한 강의는 언제든 내 강의실에서 이어서 학습하세요.</p>
+				<p>원하는 주제와 강의를 찾아보고, 구매하거나 무료로 신청한 강의는 내 강의실에서 이어서 학습하세요.</p>
 			</div>
 		</section>
 
@@ -50,8 +50,8 @@
 								구매 여부
 								<select name="ownership">
 									<option value="ALL" th:selected="${ownership == 'ALL'}">전체</option>
-									<option value="PURCHASED" th:selected="${ownership == 'PURCHASED'}">구입한 영상</option>
-									<option value="NOT_PURCHASED" th:selected="${ownership == 'NOT_PURCHASED'}">미구입 영상
+									<option value="PURCHASED" th:selected="${ownership == 'PURCHASED'}">신청 / 구매한 영상</option>
+									<option value="NOT_PURCHASED" th:selected="${ownership == 'NOT_PURCHASED'}">미신청 영상
 									</option>
 								</select>
 							</label>
@@ -88,7 +88,7 @@
 	</div>
 
 	<th:block th:replace="~{front/fragments/common :: script}"></th:block>
-	<script src="/front/js/lecture.js"></script>
+	<script src="/front/js/lecture.js?v=20261013-1"></script>
 </body>
 
 </html>

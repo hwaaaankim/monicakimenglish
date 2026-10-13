@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{front/fragments/common :: head('결제 안내')}"></head>
+<body class="stretched mk-platform-page"><div id="wrapper" class="clearfix">
+<th:block th:replace="~{front/fragments/common :: header}"></th:block>
+<main class="mk-my-page mk-payment-page"><div class="container"><section class="mk-checkout-card mk-payment-result">
+    <span class="mk-payment-success-mark mk-payment-neutral-mark" aria-hidden="true">!</span><h1>결제 상태를 확인해 주세요</h1>
+    <p th:text="${message}"></p><p class="mk-payment-note">이미 결제 승인된 주문은 이 화면에 방문해도 취소되지 않습니다. 승인 여부는 내 결제내역에서 확인해 주세요.</p>
+    <a class="mk-primary-btn w-100" href="/my/payments">내 결제내역</a>
+    <a th:if="${payment != null}" class="mk-secondary-btn w-100 mt-2" th:href="@{/lectures/{id}(id=${payment.lecture.id})}">강의 상세로 돌아가기</a>
+    <a th:if="${payment == null}" class="mk-secondary-btn w-100 mt-2" href="/lectures">강의 목록</a>
+</section></div></main><th:block th:replace="~{front/fragments/common :: footer}"></th:block></div>
+<th:block th:replace="~{front/fragments/common :: script}"></th:block><link rel="stylesheet" th:href="@{/front/css/payment.css(v='20261013-1')}">
+</body></html>

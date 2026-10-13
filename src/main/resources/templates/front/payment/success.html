@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{front/fragments/common :: head('강의 구매 완료')}"></head>
+<body class="stretched mk-platform-page"><div id="wrapper" class="clearfix">
+<th:block th:replace="~{front/fragments/common :: header}"></th:block>
+<main class="mk-my-page mk-payment-page"><div class="container"><section class="mk-checkout-card mk-payment-result">
+    <span class="mk-payment-success-mark" aria-hidden="true">✓</span>
+    <span class="mk-payment-label" th:if="${payment.provider == 'MOCK'}">샘플 결제 완료 · 실제 청구 없음</span>
+    <span class="mk-payment-label" th:if="${payment.provider == 'TOSS_TEST'}">토스페이먼츠 테스트 완료 · 실제 청구 없음</span>
+    <h1>강의 신청이 완료되었습니다</h1><p>내 강의에 등록되었습니다. 학습 기록과 책갈피도 함께 관리하세요.</p>
+    <div class="mk-checkout-line"><span>강의</span><strong th:text="${payment.lectureTitleSnapshot}"></strong></div>
+    <div class="mk-checkout-line"><span>주문번호</span><strong class="mk-payment-order" th:text="${payment.orderNo}"></strong></div>
+    <div class="mk-checkout-line"><span>결제금액</span><strong th:text="${#numbers.formatInteger(payment.amount,0,'COMMA') + '원'}"></strong></div>
+    <div class="mk-checkout-line" th:if="${payment.refundedAmount != null and payment.refundedAmount.signum() > 0}"><span>환불금액</span><strong th:text="${#numbers.formatInteger(payment.refundedAmount,0,'COMMA') + '원 (부분 환불)'}"></strong></div>
+    <div class="mk-checkout-line"><span>수강 시작</span><strong th:text="${#temporals.format(enrollment.startedAt,'yyyy.MM.dd HH:mm')}"></strong></div>
+    <div class="mk-checkout-line"><span>수강 종료</span><strong th:text="${enrollment.expiresAt == null ? '무제한' : #temporals.format(enrollment.expiresAt,'yyyy.MM.dd HH:mm')}"></strong></div>
+    <p class="mk-payment-note" th:if="${startsLater}">안내된 시작 시점부터 시청할 수 있습니다.</p>
+    <a class="mk-primary-btn w-100" th:unless="${startsLater}" th:href="@{/watch/{id}(id=${payment.lecture.id})}">시청하기</a>
+    <a class="mk-primary-btn w-100" th:if="${startsLater}" th:href="@{/lectures/{id}(id=${payment.lecture.id})}">강의 확인하기</a>
+    <a class="mk-secondary-btn w-100 mt-2" href="/my/classroom">내 강의 보기</a>
+</section></div></main><th:block th:replace="~{front/fragments/common :: footer}"></th:block></div>
+<th:block th:replace="~{front/fragments/common :: script}"></th:block><link rel="stylesheet" th:href="@{/front/css/payment.css(v='20261013-1')}">
+</body></html>

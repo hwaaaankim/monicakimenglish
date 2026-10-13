@@ -17,6 +17,18 @@
 			<div class="row">
 				<div class="col-xs-12 col-lg-8">
 					<div class="mk-admin-panel">
+						<h2>강사 소개</h2>
+						<div class="mk-admin-instructor-summary">
+							<img th:if="${instructorImages != null and !#lists.isEmpty(instructorImages)}" th:src="@{/media/lectures/{lid}/instructor-images/{iid}(lid=${lecture.id},iid=${instructorImages[0].id})}" th:alt="${lecture.instructorName + ' 강사'}">
+							<div><h3 th:text="${#strings.isEmpty(lecture.instructorName) ? '강사 실명 미등록' : lecture.instructorName}"></h3><p th:text="${lecture.instructorBiography}"></p><ul class="mk-admin-careers"><li th:each="career : ${lecture.instructorCareers}" th:text="${career}"></li></ul></div>
+						</div>
+						<div class="mk-admin-instructor-photos" th:if="${instructorImages != null and #lists.size(instructorImages) > 1}"><img th:each="img, stat : ${instructorImages}" th:if="${!stat.first}" th:src="@{/media/lectures/{lid}/instructor-images/{iid}(lid=${lecture.id},iid=${img.id})}" alt="강사 소개 사진"></div>
+					</div>
+					<div class="mk-admin-panel mk-admin-schedule">
+						<h2>모집 및 수강 일정</h2>
+						<dl><dt>모집기간</dt><dd th:text="${lecture.enrollmentStartsAt == null ? '상시 모집' : #temporals.format(lecture.enrollmentStartsAt,'yyyy.MM.dd HH:mm') + ' ~ ' + #temporals.format(lecture.enrollmentEndsAt,'yyyy.MM.dd HH:mm')}"></dd><dt>강의 시작</dt><dd th:text="${lecture.lectureStartsAt == null ? '신청 후 바로 수강' : #temporals.format(lecture.lectureStartsAt,'yyyy.MM.dd HH:mm')}"></dd><dt>수강기간</dt><dd th:text="${lecture.viewingDays == null ? '무제한' : '수강 시작일부터 ' + lecture.viewingDays + '일'}"></dd><dt>모집 실패</dt><dd>모집 인원과 관계없이 강의가 진행됩니다.</dd></dl>
+					</div>
+					<div class="mk-admin-panel">
 						<div class="mk-detail-summary"><span class="mk-state" th:classappend="${lecture.status}"
 								th:text="${lecture.status}"></span><strong
 								th:text="${lecture.pricingType.name()=='FREE' ? '무료' : #numbers.formatInteger(lecture.price,0,'COMMA')+'원'}"></strong><span

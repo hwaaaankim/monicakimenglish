@@ -26,10 +26,13 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.dev.MonicaKimEnglish.config.AppPrincipal;
 import com.dev.MonicaKimEnglish.repository.lecture.LectureAttachmentRepository;
 import com.dev.MonicaKimEnglish.repository.lecture.LectureIntroImageRepository;
+import com.dev.MonicaKimEnglish.repository.lecture.LectureInstructorImageRepository;
 import com.dev.MonicaKimEnglish.service.learning.LectureAccessService;
+import com.dev.MonicaKimEnglish.service.learning.BookmarkService;
 import com.dev.MonicaKimEnglish.service.learning.VideoPlaybackTicketService;
 import com.dev.MonicaKimEnglish.service.lecture.LectureService;
 import com.dev.MonicaKimEnglish.service.storage.FileStorageService;
+import com.dev.MonicaKimEnglish.service.storage.VideoFrameService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -48,6 +51,63 @@ public class MediaController {
     private final LectureAccessService access;
     private final FileStorageService storage;
     private final VideoPlaybackTicketService playbackTickets;
+    private final LectureInstructorImageRepository instructorImages;
+    private final VideoFrameService videoFrames;
+    private final BookmarkService bookmarks;
+
+    @GetMapping("/secure-media/lectures/{lectureId}/frames/{positionSeconds}")
+    public ResponseEntity<Resource> learningFrame(@PathVariable Long lectureId, @PathVariable long positionSeconds, Authentication auth) {
+        Long clientId = cid(auth);
+        var enrollment = access.requireOwnedEnrollment(clientId, lectureId);
+        if (enrollment.getStatus() == com.dev.MonicaKimEnglish.model.enums.EnrollmentStatus.CANCELED
+                || enrollment.getLecture().getStatus() == com.dev.MonicaKimEnglish.model.enums.LectureStatus.DRAFT
+                || !access.hasEligibleFunding(enrollment)) {
+            throw new LectureAccessService.AccessDeniedException("현재 유효한 결제의 강의 썸네일만 제공됩니다.");
+        }
+        if (!bookmarks.canReadFrame(clientId, lectureId, positionSeconds)) {
+            throw new LectureAccessService.AccessDeniedException("저장된 학습 위치의 썸네일만 확인할 수 있습니다.");
+        }
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .header(HttpHeaders.PRAGMA, "no-cache")
+                .header("Cross-Origin-Resource-Policy", "same-origin")
+                .header("X-Content-Type-Options", "nosniff")
+                .contentType(MediaType.IMAGE_JPEG)
+                .body(videoFrames.frame(enrollment.getLecture(), positionSeconds));
+    }
+
+    @GetMapping("/media/lectures/{lectureId}/instructor-images/{imageId}")
+    public ResponseEntity<Resource> instructorImage(@PathVariable Long lectureId, @PathVariable Long imageId, Authentication auth) {
+        var lecture = lectures.get(lectureId);
+        boolean admin = auth != null && auth.getPrincipal() instanceof AppPrincipal p && "ADMIN".equals(p.getRole());
+        boolean enrolled = lecture.getStatus() == com.dev.MonicaKimEnglish.model.enums.LectureStatus.ARCHIVED
+                && auth != null && auth.getPrincipal() instanceof AppPrincipal p
+                && "CLIENT".equals(p.getRole()) && access.hasEnrollmentHistory(p.getAccountId(), lectureId);
+        if (lecture.getStatus() != com.dev.MonicaKimEnglish.model.enums.LectureStatus.PUBLISHED && !admin && !enrolled) {
+            throw new IllegalArgumentException("현재 공개되지 않은 이미지입니다.");
+        }
+        var image = instructorImages.findByIdAndLectureId(imageId, lectureId).orElse(null);
+        if (image == null || image.getFilePath() == null || image.getFilePath().isBlank()) {
+            return ResponseEntity.notFound().build();
+        }
+        try {
+            Path path = storage.resolve(image.getFilePath());
+            if (!Files.isRegularFile(path)) {
+                log.debug("Lecture instructor image file is missing. lectureId={}, imageId={}, path={}",
+                        lectureId, imageId, image.getFilePath());
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok()
+                    .cacheControl(lecture.getStatus() == com.dev.MonicaKimEnglish.model.enums.LectureStatus.PUBLISHED
+                            ? CacheControl.maxAge(java.time.Duration.ofDays(7)) : CacheControl.noStore())
+                    .header("Cross-Origin-Resource-Policy", "same-origin")
+                    .header("X-Content-Type-Options", "nosniff")
+                    .contentType(detect(image.getFilePath(), MediaType.IMAGE_JPEG))
+                    .body(storage.resource(image.getFilePath()));
+        } catch (IllegalArgumentException | SecurityException e) {
+            log.debug("Lecture instructor image cannot be served. lectureId={}, imageId={}", lectureId, imageId, e);
+            return ResponseEntity.notFound().build();
+        }
+    }
 
     @GetMapping("/media/lectures/{lectureId}/images/{imageId}")
     public ResponseEntity<Resource> publicImage(
@@ -59,10 +119,11 @@ public class MediaController {
         boolean admin = auth != null
                 && auth.getPrincipal() instanceof AppPrincipal p
                 && "ADMIN".equals(p.getRole());
-        boolean clientAccess = auth != null
+        boolean clientAccess = lecture.getStatus() == com.dev.MonicaKimEnglish.model.enums.LectureStatus.ARCHIVED
+                && auth != null
                 && auth.getPrincipal() instanceof AppPrincipal p
                 && "CLIENT".equals(p.getRole())
-                && access.canWatch(p.getAccountId(), lectureId);
+                && access.hasEnrollmentHistory(p.getAccountId(), lectureId);
 
         if (lecture.getStatus() != com.dev.MonicaKimEnglish.model.enums.LectureStatus.PUBLISHED
                 && !admin
@@ -90,7 +151,10 @@ public class MediaController {
             MediaType type = detect(img.getFilePath(), MediaType.IMAGE_JPEG);
 
             return ResponseEntity.ok()
-                    .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(7)))
+                    .cacheControl(lecture.getStatus() == com.dev.MonicaKimEnglish.model.enums.LectureStatus.PUBLISHED
+                            ? CacheControl.maxAge(java.time.Duration.ofDays(7)) : CacheControl.noStore())
+                    .header("Cross-Origin-Resource-Policy", "same-origin")
+                    .header("X-Content-Type-Options", "nosniff")
                     .contentType(type)
                     .body(resource);
         } catch (IllegalArgumentException | SecurityException e) {

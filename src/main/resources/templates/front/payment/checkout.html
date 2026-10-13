@@ -1,38 +1,50 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
-
-<head th:replace="~{front/fragments/common :: head('강의 결제')}"></head>
-
+<head th:replace="~{front/fragments/common :: head('강의 구매하기')}"></head>
 <body class="stretched mk-platform-page">
-	<div id="wrapper" class="clearfix">
-		<th:block th:replace="~{front/fragments/common :: header}"></th:block>
-		<main class="mk-my-page">
-			<div class="container">
-				<div class="row justify-content-center">
-					<div class="col-12 col-lg-7">
-						<div class="mk-checkout-card"><span class="mk-dev-badge">개발용 MOCK PG</span>
-							<h1>강의 결제</h1>
-							<div class="mk-checkout-line"><span>상품명</span><strong th:text="${lecture.title}"></strong>
-							</div>
-							<div class="mk-checkout-line"><span>수강기간</span><strong
-									th:text="${lecture.viewingDays == null ? '무제한' : lecture.viewingDays + '일'}"></strong>
-							</div>
-							<div class="mk-checkout-total"><span>최종 결제금액</span><strong
-									th:text="${#numbers.formatInteger(lecture.price,0,'COMMA') + '원'}"></strong></div>
-							<p class="mk-payment-note">현재는 Toss Payments 등 실제 PG 연동 전 단계이므로 결제 승인 버튼을 누르면 테스트 결제 성공으로
-								처리됩니다. 실운영 전에는 서버 승인 API와 Webhook 검증으로 교체해야 합니다.</p>
-							<form method="post" th:action="@{/payments/mock/approve/{id}(id=${lecture.id})}"><button
-									class="mk-primary-btn w-100">테스트 결제 승인</button></form><a
-								class="mk-secondary-btn w-100 mt-2"
-								th:href="@{/lectures/{id}(id=${lecture.id})}">돌아가기</a>
-						</div>
-					</div>
-				</div>
-			</div>
-		</main>
-		<th:block th:replace="~{front/fragments/common :: footer}"></th:block>
-	</div>
-	<th:block th:replace="~{front/fragments/common :: script}"></th:block>
-</body>
-
-</html>
+<div id="wrapper" class="clearfix">
+<th:block th:replace="~{front/fragments/common :: header}"></th:block>
+<main class="mk-my-page mk-payment-page">
+<div class="container"><div class="mk-payment-shell">
+    <a class="mk-payment-back" th:href="@{/lectures/{id}(id=${lecture.id})}">← 강의 상세</a>
+    <div class="mk-payment-heading"><span class="mk-payment-eyebrow">YOUR NEXT CHAPTER</span><h1>강의 구매하기</h1><p>신청 정보를 확인하고, 나만의 학습을 시작하세요.</p></div>
+    <div class="mk-checkout-grid">
+    <section class="mk-checkout-card">
+        <div class="mk-payment-label" th:if="${paymentMode == 'MOCK'}">샘플 결제 · 실제 금액이 청구되지 않습니다</div>
+        <div class="mk-payment-label" th:if="${tossTest}">토스페이먼츠 테스트 결제 · 실제 금액이 청구되지 않습니다</div>
+        <h2 th:text="${lecture.title}">강의명</h2>
+        <div class="mk-checkout-line"><span>강의 구성</span><strong>동영상 1편 · 총 1회차</strong></div>
+        <div class="mk-checkout-line"><span>강의 시작</span><strong th:text="${lecture.lectureStartsAt == null ? '신청 완료 즉시' : #temporals.format(lecture.lectureStartsAt, 'yyyy.MM.dd HH:mm') + '부터'}"></strong></div>
+        <div class="mk-checkout-line"><span>수강기간</span><strong th:text="${lecture.viewingDays == null ? '무제한' : '수강 시작일부터 ' + lecture.viewingDays + '일'}"></strong></div>
+        <div class="mk-checkout-line"><span>제공 조건</span><strong>모집 인원과 관계없이 제공</strong></div>
+        <div class="mk-checkout-total"><span>총 결제금액</span><strong th:text="${#numbers.formatInteger(lecture.price, 0, 'COMMA') + '원'}"></strong></div>
+        <p class="mk-payment-note" th:if="${paymentMode == 'MOCK'}">현재는 연동 전 샘플입니다. 결제완료를 누르면 신청 및 학습 기능을 체험할 수 있습니다.</p>
+        <label class="mk-payment-agreement"><input type="checkbox" id="purchaseAgreement"><span>강의 제공 조건과 <a href="#purchaseTerms">환불 규정</a>을 확인하고 동의합니다.</span></label>
+        <div class="mk-payment-error" id="paymentError" role="alert" hidden></div>
+        <button type="button" class="mk-primary-btn w-100" id="paymentStart" th:attr="data-lecture-id=${lecture.id},data-mode=${paymentMode},data-order-url=@{/payments/orders},data-approve-url=@{/payments/mock/approve}" th:text="${paymentMode == 'MOCK' ? '샘플 결제 진행하기' : '결제하기'}">결제하기</button>
+        <p class="mk-payment-secure">결제 완료 후 내 강의에 자동 등록됩니다.</p>
+    </section>
+    <aside class="mk-purchase-terms" id="purchaseTerms"><span class="mk-payment-eyebrow">BEFORE YOU START</span><h2>수강 · 환불 안내</h2>
+        <p>모집 성공 여부와 관계없이 강의가 열립니다. 무제한 강의는 수강 종료일이 없으며, 기간제 강의는 안내된 수강기간 동안 이용할 수 있습니다.</p>
+        <p class="mk-policy-text" th:text="${refundPolicy}"></p><small th:text="${'안내 기준: ' + refundVersion}"></small>
+        <a href="/contact" class="mk-payment-help">구매 및 환불 문의 →</a>
+    </aside>
+    </div>
+</div></div>
+</main>
+<th:block th:replace="~{front/fragments/common :: footer}"></th:block>
+</div>
+<dialog id="samplePaymentDialog" class="mk-payment-dialog" aria-labelledby="samplePaymentTitle">
+    <button type="button" class="mk-payment-dialog-close" data-payment-close aria-label="닫기">×</button>
+    <span class="mk-payment-eyebrow">SAMPLE CHECKOUT</span><h2 id="samplePaymentTitle">샘플 결제</h2>
+    <p>실제 결제가 진행되지 않으며 카드 정보가 필요하지 않습니다. 아래 버튼을 누르면 강의 신청이 완료됩니다.</p>
+    <div class="mk-checkout-line"><span>강의</span><strong th:text="${lecture.title}"></strong></div>
+    <div class="mk-checkout-total"><span>샘플 결제금액</span><strong th:text="${#numbers.formatInteger(lecture.price,0,'COMMA') + '원'}"></strong></div>
+    <div class="mk-payment-error" id="samplePaymentError" role="alert" hidden></div>
+    <button type="button" id="samplePaymentComplete" class="mk-primary-btn w-100">결제완료</button><button type="button" class="mk-secondary-btn w-100 mt-2" data-payment-close>취소</button>
+</dialog>
+<th:block th:replace="~{front/fragments/common :: script}"></th:block>
+<link rel="stylesheet" th:href="@{/front/css/payment.css(v='20261013-1')}">
+<script th:if="${paymentMode == 'TOSS'}" src="https://js.tosspayments.com/v2/standard"></script>
+<script th:src="@{/front/js/payment.js(v='20261013-1')}"></script>
+</body></html>

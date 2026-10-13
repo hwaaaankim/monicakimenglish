@@ -41,6 +41,15 @@ public class Payment {
     @Column(nullable = false, precision = 14, scale = 0)
     private BigDecimal amount;
 
+    @Column(name = "refunded_amount", nullable = false, precision = 14, scale = 0)
+    private BigDecimal refundedAmount = BigDecimal.ZERO;
+
+    @Column(name = "provider_checked_at")
+    private LocalDateTime providerCheckedAt;
+
+    @Transient
+    public BigDecimal getNetAmount() { return amount.subtract(refundedAmount == null ? BigDecimal.ZERO : refundedAmount); }
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private PaymentStatus status;
@@ -48,8 +57,30 @@ public class Payment {
     @Column(nullable = false, length = 30)
     private String provider;
 
-    @Column(name = "payment_key", length = 120)
+    @Column(name = "payment_key", unique = true, length = 200)
     private String paymentKey;
+
+    @Column(name = "viewing_days_snapshot")
+    private Integer viewingDaysSnapshot;
+
+    @Column(name = "lecture_start_snapshot")
+    private LocalDateTime lectureStartSnapshot;
+
+    @Column(name = "refund_policy_version", length = 50)
+    private String refundPolicyVersion;
+
+    @Lob
+    @Column(name = "refund_policy_snapshot", columnDefinition = "TEXT")
+    private String refundPolicySnapshot;
+
+    @Column(name = "total_sessions_snapshot", nullable = false)
+    private int totalSessionsSnapshot = 1;
+
+    @Column(name = "terms_agreed_at")
+    private LocalDateTime termsAgreedAt;
+
+    @Version
+    private Long version;
 
     @Column(name = "requested_at", nullable = false)
     private LocalDateTime requestedAt;

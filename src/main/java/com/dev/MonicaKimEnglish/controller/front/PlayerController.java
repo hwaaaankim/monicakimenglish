@@ -46,6 +46,10 @@ public class PlayerController {
         var introImages = lectures.introImages(lectureId);
 
         model.addAttribute("lecture", enrollment.getLecture());
+        model.addAttribute("enrollment", enrollment);
+        model.addAttribute("accessExpiresAt", enrollment.getExpiresAt());
+        model.addAttribute("accessStartedAt", enrollment.getStartedAt());
+        model.addAttribute("learningSummary", progress.learningSummary(principal.getAccountId(), lectureId));
         model.addAttribute("attachments", lectures.attachmentList(lectureId));
         model.addAttribute("posterImageId", introImages.isEmpty() ? null : introImages.get(0).getId());
         model.addAttribute("playerWatermark", principal.getUsername());
@@ -72,21 +76,21 @@ public class PlayerController {
             Authentication auth,
             HttpServletRequest request) {
 
-        Long clientId = cid(auth);
-        var started = progress.startSession(clientId, lectureId, request.getHeader("User-Agent"));
-        String playbackUrl = issuePlaybackUrl(request.getSession(false), clientId, lectureId);
-
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("sessionKey", started.sessionKey());
-        body.put("playbackUrl", playbackUrl);
-        body.put("lastPositionSeconds", started.lastPositionSeconds());
-        body.put("progressPercent", started.progressPercent());
-        body.put("completed", started.completed());
-
-        return ResponseEntity.ok()
-                .cacheControl(org.springframework.http.CacheControl.noStore())
-                .header(HttpHeaders.PRAGMA, "no-cache")
-                .body(body);
+        try {
+            Long clientId = cid(auth);
+            var started = progress.startSession(clientId, lectureId, request.getHeader("User-Agent"));
+            String playbackUrl = issuePlaybackUrl(request.getSession(), clientId, lectureId);
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("sessionKey", started.sessionKey());
+            body.put("playbackUrl", playbackUrl);
+            body.put("lastPositionSeconds", started.lastPositionSeconds());
+            body.put("progressPercent", started.progressPercent());
+            body.put("completed", started.completed());
+            return ResponseEntity.ok().cacheControl(org.springframework.http.CacheControl.noStore())
+                    .header(HttpHeaders.PRAGMA, "no-cache").body(body);
+        } catch (LectureAccessService.AccessDeniedException | IllegalArgumentException error) {
+            return apiFailure(error);
+        }
     }
 
     /**
@@ -95,19 +99,20 @@ public class PlayerController {
      */
     @PostMapping("/api/player/{lectureId}/ticket")
     @ResponseBody
-    public ResponseEntity<Map<String, String>> ticket(
+    public ResponseEntity<?> ticket(
             @PathVariable Long lectureId,
             Authentication auth,
             HttpServletRequest request) {
 
-        Long clientId = cid(auth);
-        access.requireAccess(clientId, lectureId);
-        String playbackUrl = issuePlaybackUrl(request.getSession(false), clientId, lectureId);
-
-        return ResponseEntity.ok()
-                .cacheControl(org.springframework.http.CacheControl.noStore())
-                .header(HttpHeaders.PRAGMA, "no-cache")
-                .body(Map.of("playbackUrl", playbackUrl));
+        try {
+            Long clientId = cid(auth);
+            access.requireAccess(clientId, lectureId);
+            String playbackUrl = issuePlaybackUrl(request.getSession(), clientId, lectureId);
+            return ResponseEntity.ok().cacheControl(org.springframework.http.CacheControl.noStore())
+                    .header(HttpHeaders.PRAGMA, "no-cache").body(Map.of("playbackUrl", playbackUrl));
+        } catch (LectureAccessService.AccessDeniedException | IllegalArgumentException error) {
+            return apiFailure(error);
+        }
     }
 
     @PostMapping("/api/player/{lectureId}/heartbeat")
@@ -116,9 +121,18 @@ public class PlayerController {
             @PathVariable Long lectureId,
             @RequestBody HeartbeatRequest body,
             Authentication auth) {
-        return ResponseEntity.ok()
-                .cacheControl(org.springframework.http.CacheControl.noStore())
-                .body(progress.heartbeat(cid(auth), lectureId, body));
+        try {
+            return ResponseEntity.ok().cacheControl(org.springframework.http.CacheControl.noStore())
+                    .body(progress.heartbeat(cid(auth), lectureId, body));
+        } catch (LectureAccessService.AccessDeniedException | IllegalArgumentException error) {
+            return apiFailure(error);
+        }
+    }
+
+    private ResponseEntity<Map<String, Object>> apiFailure(RuntimeException error) {
+        int status = error instanceof LectureAccessService.AccessDeniedException ? 403 : 400;
+        return ResponseEntity.status(status).cacheControl(org.springframework.http.CacheControl.noStore())
+                .header(HttpHeaders.PRAGMA, "no-cache").body(Map.of("message", error.getMessage()));
     }
 
     private String issuePlaybackUrl(HttpSession session, Long clientId, Long lectureId) {
@@ -134,7 +148,7 @@ public class PlayerController {
     }
 
     private AppPrincipal principal(Authentication auth) {
-        if (auth == null || !(auth.getPrincipal() instanceof AppPrincipal principal)) {
+        if (auth == null || !(auth.getPrincipal() instanceof AppPrincipal principal) || !"CLIENT".equals(principal.getRole())) {
             throw new LectureAccessService.AccessDeniedException("로그인이 필요합니다.");
         }
         return principal;
