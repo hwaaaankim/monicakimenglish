@@ -13,10 +13,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.dev.MonicaKimEnglish.config.AppPrincipal;
 import com.dev.MonicaKimEnglish.dto.learning.HeartbeatRequest;
 import com.dev.MonicaKimEnglish.service.learning.LectureAccessService;
+import com.dev.MonicaKimEnglish.service.learning.LectureEntryService;
 import com.dev.MonicaKimEnglish.service.learning.ProgressService;
 import com.dev.MonicaKimEnglish.service.learning.VideoPlaybackTicketService;
 import com.dev.MonicaKimEnglish.service.lecture.LectureService;
@@ -33,15 +35,23 @@ public class PlayerController {
     private final LectureService lectures;
     private final ProgressService progress;
     private final VideoPlaybackTicketService playbackTickets;
+    private final LectureEntryService lectureEntries;
 
     @GetMapping("/watch/{lectureId}")
     public String watch(
             @PathVariable Long lectureId,
             Authentication auth,
             Model model,
+            @RequestParam(name = "entry", required = false) String entryToken,
+            @RequestParam(name = "t", required = false) String position,
+            HttpServletRequest request,
             HttpServletResponse response) {
 
         AppPrincipal principal = principal(auth);
+        response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate, max-age=0, private");
+        if (!lectureEntries.consume(request.getSession(false), entryToken, principal.getAccountId(), lectureId)) {
+            return lectureEntries.detailRedirect(lectureId, position);
+        }
         var enrollment = access.requireAccess(principal.getAccountId(), lectureId);
         var introImages = lectures.introImages(lectureId);
 

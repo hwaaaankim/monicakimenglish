@@ -15,9 +15,12 @@ import com.dev.MonicaKimEnglish.model.enums.PricingType;
 import com.dev.MonicaKimEnglish.service.learning.LectureAccessService;
 import com.dev.MonicaKimEnglish.service.learning.WishlistService;
 import com.dev.MonicaKimEnglish.service.learning.ProgressService;
+import com.dev.MonicaKimEnglish.service.learning.LectureEntryService;
 import com.dev.MonicaKimEnglish.service.lecture.LectureService;
 
 import lombok.RequiredArgsConstructor;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Controller
 @RequiredArgsConstructor
@@ -26,6 +29,7 @@ public class LectureController {
     private final LectureAccessService access;
     private final WishlistService wishlists;
     private final ProgressService progress;
+    private final LectureEntryService lectureEntries;
 
     @GetMapping("/lectures")
     public String list(@RequestParam(defaultValue = "") String q,
@@ -41,7 +45,8 @@ public class LectureController {
     }
 
     @GetMapping("/lectures/{id}")
-    public String detail(@PathVariable Long id, Authentication authentication, Model model) {
+    public String detail(@PathVariable Long id, Authentication authentication, Model model,
+                         HttpServletRequest request, HttpServletResponse response) {
         var lecture = lectures.get(id);
         Long clientId = clientId(authentication);
         var card = lectures.toCard(lecture, clientId);
@@ -66,6 +71,12 @@ public class LectureController {
         }
         model.addAttribute("attachments", lectures.attachmentList(id));
         model.addAttribute("tags", lectures.tagList(id));
+        // 계정별 입장권과 학습 기록이 브라우저/공유 캐시에 남지 않도록 합니다.
+        response.setHeader("Cache-Control", "no-store, private");
+        response.setHeader("Referrer-Policy", "same-origin");
+        if (clientId != null && card.accessAvailable()) {
+            model.addAttribute("lectureEntryToken", lectureEntries.issue(request.getSession(), clientId, id));
+        }
         return "front/lecture/detail";
     }
 

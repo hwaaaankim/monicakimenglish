@@ -137,15 +137,19 @@ public class LectureService {
         boolean wished = false;
         boolean completed = false;
         boolean available = false;
+        boolean enrolled = false;
         int percent = 0;
         LocalDateTime expires = null;
 
         if (clientId != null) {
+            LocalDateTime now = LocalDateTime.now();
             List<Enrollment> history = enrollments.findHistory(clientId, lecture.getId());
-            List<Enrollment> usable = enrollments.findUsable(clientId, lecture.getId(), LocalDateTime.now()).stream()
+            List<Enrollment> usable = enrollments.findUsable(clientId, lecture.getId(), now).stream()
                     .filter(fundingPolicy::isEligible).toList();
             owned = !history.isEmpty();
             available = lecture.getStatus() != LectureStatus.DRAFT && !usable.isEmpty();
+            enrolled = enrollments.findActiveIncludingUpcoming(clientId, lecture.getId(), now).stream()
+                    .anyMatch(fundingPolicy::isEligible);
 
             if (available) {
                 expires = usable.get(0).getExpiresAt();
@@ -177,7 +181,8 @@ public class LectureService {
                 percent,
                 completed,
                 expires,
-                available);
+                available,
+                enrolled);
     }
 
     public List<LectureIntroImage> introImages(Long lectureId) {

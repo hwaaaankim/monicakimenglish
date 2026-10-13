@@ -22,5 +22,6 @@ public record LectureCardDto(
         int progressPercent,
         boolean completed,
         LocalDateTime expiresAt,
-        boolean accessAvailable) {
+        boolean accessAvailable,
+        boolean enrolled) {
 }

@@ -15,9 +15,8 @@
     <div class="mk-checkout-line"><span>수강 시작</span><strong th:text="${#temporals.format(enrollment.startedAt,'yyyy.MM.dd HH:mm')}"></strong></div>
     <div class="mk-checkout-line"><span>수강 종료</span><strong th:text="${enrollment.expiresAt == null ? '무제한' : #temporals.format(enrollment.expiresAt,'yyyy.MM.dd HH:mm')}"></strong></div>
     <p class="mk-payment-note" th:if="${startsLater}">안내된 시작 시점부터 시청할 수 있습니다.</p>
-    <a class="mk-primary-btn w-100" th:unless="${startsLater}" th:href="@{/watch/{id}(id=${payment.lecture.id})}">시청하기</a>
-    <a class="mk-primary-btn w-100" th:if="${startsLater}" th:href="@{/lectures/{id}(id=${payment.lecture.id})}">강의 확인하기</a>
+    <a class="mk-primary-btn w-100" th:href="@{/lectures/{id}(id=${payment.lecture.id})}">강의실가기</a>
     <a class="mk-secondary-btn w-100 mt-2" href="/my/classroom">내 강의 보기</a>
 </section></div></main><th:block th:replace="~{front/fragments/common :: footer}"></th:block></div>
-<th:block th:replace="~{front/fragments/common :: script}"></th:block><link rel="stylesheet" th:href="@{/front/css/payment.css(v='20261013-1')}">
+<th:block th:replace="~{front/fragments/common :: script}"></th:block><link rel="stylesheet" th:href="@{/front/css/payment.css(v='20261013-layout1')}">
 </body></html>

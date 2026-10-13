@@ -2,14 +2,12 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 
 <body>
-	<article th:fragment="card(item)" class="mk-lecture-card" th:attr="data-lecture-id=${item.id}">
-		<a class="mk-thumb" th:href="@{/lectures/{id}(id=${item.id})}">
-			<img th:if="${item.thumbnailImageId != null}"
+	<article th:fragment="card(item)" class="mk-lecture-card" th:attr="data-lecture-id=${item.id}" th:classappend="${item.owned} ? ' mk-card-owned' : ' mk-card-unowned'">
+		<a class="mk-thumb" data-media-frame th:href="@{/lectures/{id}(id=${item.id})}" th:attr="aria-label=${item.title + ' 상세보기'}">
+            <span class="mk-media-fallback" aria-hidden="true"><i class="icon-film" aria-hidden="true"></i><small>ONLINE CLASS</small><span>강의 이미지 준비 중</span></span>
+			<img data-media-image th:if="${item.thumbnailImageId != null}" loading="lazy"
 				th:src="@{/media/lectures/{lid}/images/{iid}(lid=${item.id},iid=${item.thumbnailImageId})}"
 				alt="강의 썸네일">
-			<div th:if="${item.thumbnailImageId == null}" class="mk-thumb-placeholder">
-				<span>MONICA KIM</span>
-			</div>
 			<span class="mk-thumb-shade" aria-hidden="true"></span>
 			<span class="mk-duration"
 				th:text="${T(java.lang.String).format('%02d:%02d', item.durationSeconds / 60, item.durationSeconds % 60)}">00:00</span>
@@ -25,16 +23,17 @@
 			</div>
 
 			<h3>
-				<a th:href="@{/lectures/{id}(id=${item.id})}" th:text="${item.title}">강의 제목</a>
+				<a th:href="@{/lectures/{id}(id=${item.id})}" th:attr="title=${item.title}" th:text="${item.title}">강의 제목</a>
 			</h3>
 
-			<p class="mk-clamp-description" th:text="${item.description}">강의 설명</p>
+			<p class="mk-clamp-description" th:attr="title=${item.description}" th:text="${item.description}">강의 설명</p>
 
 			<div class="mk-tags">
-				<a th:each="tag : ${item.tags}" th:href="@{/lectures(tag=${tag})}" th:text="${'#' + tag}">#키워드</a>
+				<a th:each="tag : ${item.tags}" th:href="@{/lectures(tag=${tag})}" th:attr="title=${'#' + tag}" th:text="${'#' + tag}">#키워드</a>
 			</div>
 
-			<div class="mk-progress-wrap" th:if="${item.owned}">
+            <div class="mk-card-footer">
+			<div class="mk-progress-wrap mk-card-learning-slot" th:if="${item.owned}">
 				<div class="mk-progress-label">
 					<span>학습 진행률</span>
 					<strong th:text="${item.progressPercent + '%'}">0%</strong>
@@ -44,17 +43,19 @@
 				</div>
 			</div>
 
+            <div class="mk-card-enrollment-caption mk-card-learning-slot" th:unless="${item.owned}"><span th:text="${item.pricingType.name() == 'FREE' ? '무료 신청으로 내 강의실에 담기' : '구매 후 내 강의실에서 학습'}"></span></div>
 			<div class="mk-card-actions">
 				<button type="button" class="mk-secondary-btn mk-quickview-btn"
 					th:attr="data-preview-id=${item.id}">빠른보기</button>
-				<a class="mk-secondary-btn" th:unless="${item.accessAvailable}" th:href="@{/lectures/{id}(id=${item.id})}">상세보기</a>
-            <a class="mk-primary-btn" th:if="${item.accessAvailable}" th:href="@{/watch/{id}(id=${item.id})}">시청하기</a>
+				<a class="mk-primary-btn" th:href="@{/lectures/{id}(id=${item.id})}"
+					th:text="${item.enrolled ? '강의실가기' : '신청하기'}">신청하기</a>
 				<button th:if="${currentUser != null and !item.owned}" type="button" class="mk-wish-btn"
 					th:classappend="${item.wished} ? ' active' : ''"
-					th:attr="data-wish-id=${item.id},aria-pressed=${item.wished}" aria-label="찜하기">
+					th:attr="data-wish-id=${item.id},aria-pressed=${item.wished},aria-label=${item.wished ? '찜 해제' : '찜하기'}">
 					<i class="icon-heart"></i>
 				</button>
 			</div>
+            </div>
 		</div>
 	</article>
 </body>

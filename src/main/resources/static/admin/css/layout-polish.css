@@ -1,0 +1,66 @@
+/* Admin controls: consistent rows and touch targets without stretching content panels. */
+.mk-admin-main { --le-control-h: 44px; }
+.mk-admin-main *, .mk-lecture-image-editor-modal * { box-sizing: border-box; }
+.mk-admin-title { align-items: center; gap: 16px; }
+.mk-admin-title > div { min-width: 0; }
+.mk-admin-title h1 { line-height: 1.4; overflow-wrap: anywhere; }
+.mk-admin-title :is(.mk-admin-primary, .mk-admin-secondary) { flex: 0 0 auto; }
+.mk-admin-main :is(.mk-admin-primary, .mk-admin-secondary), .mk-admin-filter button { height: auto; min-height: 44px; padding: 10px 16px; line-height: 1.4; text-align: center; }
+.mk-admin-main :is(.mk-admin-form, .mk-admin-filter) :is(input, select):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]) { height: 44px; min-height: 44px; min-width: 0; max-width: 100%; font-size: 16px; line-height: normal; }
+.mk-admin-form textarea { min-width: 0; max-width: 100%; resize: vertical; font-size: 16px; }
+.mk-admin-form label, .mk-admin-filter label { min-width: 0; line-height: 1.4; }
+.mk-admin-filter { padding: 16px; }
+.mk-admin-filter > .row { display: flex; flex-wrap: wrap; align-items: flex-end; margin-bottom: -12px; }
+.mk-admin-filter > .row > [class*="col-"] { float: none; min-width: 0; margin-bottom: 12px; }
+.mk-admin-filter label { margin-bottom: 0; }
+.mk-admin-filter button { width: 100%; margin-top: 0; }
+.mk-admin-table td, .mk-admin-table th { vertical-align: middle; }
+.mk-admin-table td { overflow-wrap: anywhere; }
+.mk-admin-panel { min-width: 0; }
+.mk-admin-panel .table-responsive { width: 100%; margin: 0; overscroll-behavior-x: contain; }
+.mk-career-heading button { height: 44px; }
+.mk-career-actions button { width: 44px; height: 44px; }
+.mk-career-row { grid-template-columns: 24px minmax(0, 1fr) auto; }
+.mk-lecture-editor-page .mk-file-select-button { line-height: 1.4 !important; }
+.mk-lecture-editor-page .mk-file-selected-info { white-space: normal; overflow-wrap: anywhere; }
+.mk-lecture-editor-page .mk-new-image-tools { gap: 6px; flex-wrap: wrap; }
+.mk-lecture-editor-page .mk-image-card-button { height: auto; min-height: 36px; white-space: normal; }
+.mk-admin-instructor-summary > div, .mk-admin-schedule dd { min-width: 0; overflow-wrap: anywhere; }
+.mk-admin-schedule dl { grid-template-columns: minmax(75px, .25fr) minmax(0, 1fr); }
+.mk-lecture-image-editor-dialog { max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); }
+.mk-editor-close { flex-basis: 44px; width: 44px; height: 44px; }
+.mk-editor-button { min-height: 44px; height: auto; line-height: 1.4; }
+.mk-source-zoom { min-width: 0; }
+.mk-source-zoom input { min-width: 40px; }
+.mk-lecture-image-editor-header h2 { white-space: normal; overflow-wrap: anywhere; }
+@media (max-width: 991px) {
+  .mk-admin-main { padding-left: 12px; padding-right: 12px; }
+  .mk-admin-title { align-items: flex-start; }
+  .mk-admin-main .container-fluid { padding-left: 0; padding-right: 0; }
+}
+@media (max-width: 767px) {
+  .mk-admin-title { flex-wrap: wrap; gap: 10px; }
+  .mk-admin-title h1 { font-size: 23px; }
+  .mk-admin-filter { padding: 12px; }
+  .mk-admin-filter > .row > [class*="col-"] { width: 50%; }
+  .mk-admin-filter > .row > .col-xs-12 { width: 100%; }
+  .mk-admin-filter > .row > .col-xs-3 { width: 100%; }
+  .mk-career-row { grid-template-columns: 22px minmax(0, 1fr); }
+  .mk-career-actions { grid-column: 2; }
+  .mk-lecture-editor-page .mk-image-card-button { min-height: 44px; padding: 7px 10px; }
+  .mk-lecture-editor-page .mk-image-check { min-height: 44px !important; line-height: 1.4 !important; white-space: normal !important; }
+  .mk-editor-footer-right { flex-wrap: wrap; }
+  .mk-lecture-image-editor-footer { align-items: flex-start; gap: 8px; }
+  .mk-editor-steps { align-items: stretch; }
+  .mk-editor-step { min-width: 0; }
+  .mk-source-toolbar .mk-editor-button-row { display: flex; flex-wrap: wrap; }
+}
+@media (max-width: 430px) {
+  .mk-admin-panel { padding: 14px; }
+  .mk-lecture-editor-page .mk-instructor-image-grid { grid-template-columns: 1fr; }
+  .mk-career-heading { flex-wrap: wrap; }
+  .mk-lecture-image-editor-footer { flex-wrap: wrap; }
+  .mk-editor-footer-right { width: 100%; }
+  .mk-editor-footer-right .mk-editor-button { flex: 1 1 auto; }
+  .mk-admin-instructor-summary { grid-template-columns: 80px minmax(0, 1fr); }
+}

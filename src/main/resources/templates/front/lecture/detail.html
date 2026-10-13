@@ -9,27 +9,29 @@
       <a class="mk-course-back" href="/lectures">← 영상강의실</a>
       <div class="mk-course-alert" role="status" th:if="${param.enrolled != null}">무료 강의 신청이 완료되었습니다. 내 강의실에도 등록되었어요.</div>
       <div class="mk-course-alert" role="status" th:if="${param.paid != null}">강의 구매가 완료되었습니다. 이제 강의를 시청할 수 있어요.</div>
-      <div class="row g-4 align-items-start">
-        <div class="col-12 col-lg-7">
+      <div class="mk-detail-hero">
+        <div class="mk-detail-visual">
           <div class="mk-detail-gallery" data-course-gallery>
-            <div class="mk-gallery-main" th:if="${!#lists.isEmpty(images)}"><img id="mainIntroImage" data-gallery-main
+            <div class="mk-gallery-main" data-media-frame th:if="${!#lists.isEmpty(images)}"><span class="mk-media-fallback" aria-hidden="true"><i class="icon-film" aria-hidden="true"></i><small>ONLINE CLASS</small><span>강의 소개 이미지 준비 중</span></span><img id="mainIntroImage" data-gallery-main data-media-image
               th:src="@{/media/lectures/{lid}/images/{iid}(lid=${lecture.id},iid=${images[0].id})}" th:alt="${lecture.title + ' 소개 이미지'}">
               <div class="mk-gallery-arrows" th:if="${images.size() > 1}"><button type="button" data-gallery-prev aria-label="이전 소개 이미지">‹</button><button type="button" data-gallery-next aria-label="다음 소개 이미지">›</button></div>
               <span class="mk-gallery-count" data-gallery-count th:if="${images.size() > 1}" th:text="${'1 / ' + images.size()}"></span>
             </div>
-            <div class="mk-gallery-main mk-thumb-placeholder" th:if="${#lists.isEmpty(images)}"><span>MONICA KIM ONLINE CLASS</span></div>
+            <div class="mk-gallery-main is-image-unavailable" data-media-frame th:if="${#lists.isEmpty(images)}"><span class="mk-media-fallback" role="img" aria-label="강의 소개 이미지 준비 중"><i class="icon-film" aria-hidden="true"></i><small>ONLINE CLASS</small><span>강의 소개 이미지 준비 중</span></span></div>
             <div class="mk-gallery-thumbs" th:if="${images.size() > 1}"><button th:each="img,stat:${images}" type="button" class="js-gallery-thumb"
-              th:classappend="${stat.first} ? 'active' : ''" th:attr="data-gallery-src=@{/media/lectures/{lid}/images/{iid}(lid=${lecture.id},iid=${img.id})},aria-label=${'소개 이미지 ' + stat.count},aria-pressed=${stat.first}"><img
+              th:classappend="${stat.first} ? 'active' : ''" th:attr="data-gallery-src=@{/media/lectures/{lid}/images/{iid}(lid=${lecture.id},iid=${img.id})},aria-label=${'소개 이미지 ' + stat.count},aria-pressed=${stat.first}"><span class="mk-media-fallback" aria-hidden="true"><i class="icon-image" aria-hidden="true"></i></span><img data-media-image
               th:src="@{/media/lectures/{lid}/images/{iid}(lid=${lecture.id},iid=${img.id})}" alt="" loading="lazy"></button></div>
           </div>
           <div class="mk-course-summary"><span>녹화 영상 강의 · 1회차</span><span th:text="${lecture.instructorName != null and !#strings.isEmpty(lecture.instructorName) ? lecture.instructorName + ' 선생님' : 'MONICA KIM ONLINE CLASS'}"></span></div>
         </div>
-        <div class="col-12 col-lg-5">
-          <div class="mk-purchase-panel">
-            <div class="mk-tags"><span th:each="tag:${tags}" th:text="${'#' + tag}"></span></div>
-            <h1 th:text="${lecture.title}">강의 제목</h1>
-            <p class="mk-detail-intro" th:text="${lecture.description}"></p>
-            <button type="button" class="mk-text-more" data-toggle-description aria-expanded="false">설명 더보기</button>
+        <div class="mk-purchase-panel">
+            <div class="mk-purchase-heading">
+            <div class="mk-tags" th:unless="${#lists.isEmpty(tags)}"><span th:each="tag:${tags}" th:attr="title=${'#' + tag}" th:text="${'#' + tag}"></span></div>
+            <h1 th:attr="title=${lecture.title}" th:text="${lecture.title}">강의 제목</h1>
+            <p class="mk-detail-intro" id="courseDescription" th:text="${lecture.description}"></p>
+            <button type="button" class="mk-text-more" data-toggle-description aria-expanded="false" aria-controls="courseDescription">설명 더보기</button>
+            </div>
+            <div class="mk-purchase-data">
             <div class="mk-detail-meta">
               <div><small>영상 시간</small><strong th:text="${T(java.lang.String).format('%d분 %02d초', lecture.durationSeconds/60, lecture.durationSeconds%60)}"></strong></div>
               <div><small>수강 기간</small><strong th:text="${lecture.viewingDays == null ? '무제한' : '수강 시작일부터 ' + lecture.viewingDays + '일'}"></strong></div>
@@ -40,26 +42,30 @@
               <div><dt>강의 시작</dt><dd th:text="${lecture.lectureStartsAt == null ? '신청 / 결제 완료 후 바로 시작' : #temporals.format(lecture.lectureStartsAt,'yyyy.MM.dd HH:mm') + '부터'}"></dd></div>
               <div th:if="${card.owned}"><dt>나의 수강 기간</dt><dd><span th:if="${enrollment != null}" th:text="${#temporals.format(enrollment.startedAt,'yyyy.MM.dd HH:mm') + '부터 · '}"></span><span th:text="${card.expiresAt == null ? '무제한 수강' : #temporals.format(card.expiresAt,'yyyy.MM.dd HH:mm') + '까지'}"></span></dd></div>
             </dl>
-            <div th:if="${currentUser == null}" class="mk-action-stack"><a class="mk-primary-btn" th:href="@{/auth/login}">로그인 후 신청 / 구매하기</a><a class="mk-secondary-btn" href="/auth/signup">회원가입</a></div>
+            </div>
+            <div class="mk-purchase-footer">
+            <div th:if="${currentUser == null}" class="mk-action-stack"><a class="mk-primary-btn" th:href="@{/auth/login}">신청하기</a><a class="mk-secondary-btn" href="/auth/signup">회원가입</a></div>
             <div th:if="${currentUser != null}" class="mk-action-stack">
-              <a th:if="${card.accessAvailable}" class="mk-primary-btn" th:href="@{/watch/{id}(id=${lecture.id})}">시청하기</a>
+              <a th:if="${card.accessAvailable}" class="mk-primary-btn" data-classroom-entry th:href="@{/watch/{id}(id=${lecture.id},entry=${lectureEntryToken})}">강의실가기</a>
+              <button th:if="${hasCurrentEnrollment and !card.accessAvailable}" class="mk-primary-btn" type="button" disabled>강의실가기</button>
               <div th:if="${card.owned and !card.accessAvailable}" class="mk-enrollment-state"><strong th:text="${accessPending == true ? '신청 완료 · 강의 시작 대기' : (accessCanceled == true ? '수강 신청이 취소되었습니다' : (accessExpired == true ? '수강 기간이 만료되었습니다' : '수강권 확인이 필요합니다'))}"></strong><span th:if="${accessPending == true}" th:text="${#temporals.format(enrollment.startedAt,'yyyy.MM.dd HH:mm') + '부터 시청할 수 있어요.'}"></span><a href="/my/classroom">내 강의실에서 확인</a></div>
-              <form th:if="${!hasCurrentEnrollment and lecture.enrollmentOpen and lecture.pricingType.name()=='FREE'}" th:action="@{/lectures/{id}/enroll-free(id=${lecture.id})}" method="post"><button class="mk-primary-btn w-100" type="submit">무료로 강의 듣기</button><small class="mk-action-caption">결제 없이 내 강의실에 신청됩니다.</small></form>
-              <a th:if="${!hasCurrentEnrollment and lecture.enrollmentOpen and lecture.pricingType.name()=='PAID'}" class="mk-primary-btn" th:href="@{/payments/checkout/{id}(id=${lecture.id})}">구매하기</a>
+              <form th:if="${!hasCurrentEnrollment and lecture.enrollmentOpen and lecture.pricingType.name()=='FREE'}" th:action="@{/lectures/{id}/enroll-free(id=${lecture.id})}" method="post"><button class="mk-primary-btn w-100" type="submit">신청하기</button><small class="mk-action-caption">결제 없이 내 강의실에 신청됩니다.</small></form>
+              <a th:if="${!hasCurrentEnrollment and lecture.enrollmentOpen and lecture.pricingType.name()=='PAID'}" class="mk-primary-btn" th:href="@{/payments/checkout/{id}(id=${lecture.id})}">신청하기</a>
               <div class="mk-enrollment-state" th:if="${!hasCurrentEnrollment and !lecture.enrollmentOpen}" th:text="${lecture.enrollmentStatusLabel}"></div>
               <button th:if="${!card.owned}" class="mk-secondary-btn mk-wish-detail" type="button" th:classappend="${card.wished} ? ' active' : ''" th:attr="data-wish-id=${lecture.id},aria-pressed=${card.wished}" th:text="${card.wished ? '찜 해제' : '찜 목록에 담기'}"></button>
             </div>
             <button class="mk-course-policy-link" type="button" data-open-course-guide>ⓘ 영상강의 이용 및 환불 안내</button>
+            </div>
           </div>
-        </div>
       </div>
-      <section class="mk-learning-overview" th:if="${card.owned}" th:attr="data-learning-summary=${lecture.id},data-learning-available=${card.accessAvailable}"><div class="mk-learning-heading"><div><small>MY LEARNING</small><h2>내 학습 기록</h2></div><span>책갈피 최대 5개</span></div><div data-learning-content><p class="mk-learning-loading" role="status">마지막 시청 위치와 책갈피를 불러오고 있어요.</p></div></section>
-      <div class="mk-course-tabs" role="tablist" aria-label="강의 상세정보"><button type="button" role="tab" id="courseTabIntro" aria-controls="coursePanelIntro" aria-selected="true" tabindex="0" data-course-tab="coursePanelIntro">강의 소개</button><button type="button" role="tab" id="courseTabTeacher" aria-controls="coursePanelTeacher" aria-selected="false" tabindex="-1" data-course-tab="coursePanelTeacher">강사 소개</button><button type="button" role="tab" id="courseTabPolicy" aria-controls="coursePanelPolicy" aria-selected="false" tabindex="-1" data-course-tab="coursePanelPolicy">이용 · 환불 안내</button></div>
-      <section class="mk-course-tab-panel mk-long-description" id="coursePanelIntro" role="tabpanel" aria-labelledby="courseTabIntro" tabindex="0"><div class="mk-section-heading"><div><small>ABOUT CLASS</small><h2>강의 소개</h2></div></div><div class="mk-description-text" th:text="${lecture.description}"></div><div class="mk-detail-image-stack"><img th:each="img:${images}" th:src="@{/media/lectures/{lid}/images/{iid}(lid=${lecture.id},iid=${img.id})}" alt="강의 소개 이미지" loading="lazy"></div></section>
-      <section class="mk-course-tab-panel mk-instructor-section" id="coursePanelTeacher" role="tabpanel" aria-labelledby="courseTabTeacher" tabindex="0" hidden><div class="mk-instructor-layout">
-        <div class="mk-instructor-gallery" data-course-gallery th:if="${!#lists.isEmpty(instructorImages)}"><div class="mk-instructor-main"><img data-gallery-main th:src="@{/media/lectures/{lid}/instructor-images/{iid}(lid=${lecture.id},iid=${instructorImages[0].id})}" th:alt="${lecture.instructorName + ' 강사 사진'}"><div class="mk-gallery-arrows" th:if="${instructorImages.size() > 1}"><button type="button" data-gallery-prev aria-label="이전 강사 사진">‹</button><button type="button" data-gallery-next aria-label="다음 강사 사진">›</button></div><span class="mk-gallery-count" data-gallery-count th:if="${instructorImages.size() > 1}" th:text="${'1 / ' + instructorImages.size()}"></span></div><div class="mk-gallery-thumbs" th:if="${instructorImages.size() > 1}"><button type="button" th:each="img,stat:${instructorImages}" th:classappend="${stat.first} ? 'active' : ''" th:attr="data-gallery-src=@{/media/lectures/{lid}/instructor-images/{iid}(lid=${lecture.id},iid=${img.id})},aria-label=${'강사 사진 ' + stat.count},aria-pressed=${stat.first}"><img th:src="@{/media/lectures/{lid}/instructor-images/{iid}(lid=${lecture.id},iid=${img.id})}" alt="" loading="lazy"></button></div></div>
+      <section class="mk-instructor-section" id="course-instructor" aria-labelledby="courseInstructorTitle"><div class="mk-section-heading"><div><small>YOUR INSTRUCTOR</small><h2 id="courseInstructorTitle">강사 소개</h2></div></div><div class="mk-instructor-layout">
+        <div class="mk-instructor-gallery" data-course-gallery th:if="${!#lists.isEmpty(instructorImages)}"><div class="mk-instructor-main" data-media-frame><span class="mk-media-fallback" aria-hidden="true"><i class="icon-user" aria-hidden="true"></i><span>강사 사진 준비 중</span></span><img data-gallery-main data-media-image th:src="@{/media/lectures/{lid}/instructor-images/{iid}(lid=${lecture.id},iid=${instructorImages[0].id})}" th:alt="${lecture.instructorName + ' 강사 사진'}"><div class="mk-gallery-arrows" th:if="${instructorImages.size() > 1}"><button type="button" data-gallery-prev aria-label="이전 강사 사진">‹</button><button type="button" data-gallery-next aria-label="다음 강사 사진">›</button></div><span class="mk-gallery-count" data-gallery-count th:if="${instructorImages.size() > 1}" th:text="${'1 / ' + instructorImages.size()}"></span></div><div class="mk-gallery-thumbs" th:if="${instructorImages.size() > 1}"><button type="button" th:each="img,stat:${instructorImages}" th:classappend="${stat.first} ? 'active' : ''" th:attr="data-gallery-src=@{/media/lectures/{lid}/instructor-images/{iid}(lid=${lecture.id},iid=${img.id})},aria-label=${'강사 사진 ' + stat.count},aria-pressed=${stat.first}"><span class="mk-media-fallback" aria-hidden="true"><i class="icon-user" aria-hidden="true"></i></span><img data-media-image th:src="@{/media/lectures/{lid}/instructor-images/{iid}(lid=${lecture.id},iid=${img.id})}" alt="" loading="lazy"></button></div></div>
+        <div class="mk-instructor-placeholder mk-instructor-gallery is-image-unavailable" th:if="${#lists.isEmpty(instructorImages)}"><span class="mk-media-fallback" role="img" aria-label="강사 사진 준비 중"><i class="icon-user" aria-hidden="true"></i><span>강사 사진 준비 중</span></span></div>
         <div class="mk-instructor-copy"><small>YOUR INSTRUCTOR</small><h2 th:text="${#strings.isEmpty(lecture.instructorName) ? '강사 정보 준비 중' : lecture.instructorName + ' 선생님'}"></h2><p class="mk-instructor-bio" th:if="${!#strings.isEmpty(lecture.instructorBiography)}" th:text="${lecture.instructorBiography}"></p><h3 th:if="${!#lists.isEmpty(lecture.instructorCareers)}">약력 · 주요 이력</h3><ol class="mk-instructor-careers"><li th:each="career:${lecture.instructorCareers}" th:text="${career}"></li></ol><p th:if="${#strings.isEmpty(lecture.instructorBiography) and #lists.isEmpty(lecture.instructorCareers)}">상세 강사 정보는 등록 후 안내됩니다.</p></div>
       </div></section>
+      <section id="course-learning" class="mk-learning-overview" th:if="${card.owned}" th:attr="data-learning-summary=${lecture.id},data-learning-available=${card.accessAvailable},data-classroom-entry-token=${lectureEntryToken}" data-course-detail="true"><div class="mk-learning-heading"><div><small>MY LEARNING</small><h2>내 학습 기록</h2></div><span>책갈피 최대 5개</span></div><div data-learning-content><p class="mk-learning-loading" role="status">마지막 시청 위치와 책갈피를 불러오고 있어요.</p></div></section>
+      <div class="mk-course-tabs" role="tablist" aria-label="강의 상세정보"><button type="button" role="tab" id="courseTabIntro" aria-controls="coursePanelIntro" aria-selected="true" tabindex="0" data-course-tab="coursePanelIntro">강의 소개</button><button type="button" role="tab" id="courseTabPolicy" aria-controls="coursePanelPolicy" aria-selected="false" tabindex="-1" data-course-tab="coursePanelPolicy">이용 · 환불 안내</button></div>
+      <section class="mk-course-tab-panel mk-long-description" id="coursePanelIntro" role="tabpanel" aria-labelledby="courseTabIntro" tabindex="0"><div class="mk-section-heading"><div><small>ABOUT CLASS</small><h2>강의 소개</h2></div></div><div class="mk-description-text" th:text="${lecture.description}"></div><div class="mk-detail-image-stack"><div class="mk-detail-image-item" data-media-frame th:each="img,stat:${images}"><span class="mk-media-fallback" aria-hidden="true"><i class="icon-image" aria-hidden="true"></i><span>강의 소개 이미지 준비 중</span></span><img data-media-image th:src="@{/media/lectures/{lid}/images/{iid}(lid=${lecture.id},iid=${img.id})}" th:alt="${'강의 소개 이미지 ' + stat.count}" loading="lazy"></div></div></section>
       <section class="mk-course-tab-panel mk-course-policy-section" id="coursePanelPolicy" role="tabpanel" aria-labelledby="courseTabPolicy" tabindex="0" hidden><div class="mk-section-heading"><div><small>CLASS INFORMATION</small><h2>영상강의 이용 및 환불 안내</h2></div></div><th:block th:replace="~{front/fragments/course-policy :: policy}"></th:block></section>
       <section class="mk-attachments" th:if="${!#lists.isEmpty(attachments)}"><div class="mk-section-heading"><div><small>MATERIALS</small><h2>강의 자료</h2></div></div><p th:if="${!card.accessAvailable}">자료 파일은 수강 신청 후 강의를 시청할 수 있는 기간에 제공됩니다.</p><a th:if="${card.accessAvailable}" th:each="a:${attachments}" th:href="@{/secure-media/lectures/{lid}/attachments/{aid}(lid=${lecture.id},aid=${a.id})}"><i class="icon-download"></i><span th:text="${a.originalName}"></span></a></section>
       <details class="mk-refund-inline" open><summary>구매 전 확인 · 회차별 환불 기준</summary><th:block th:replace="~{front/fragments/course-policy :: policy}"></th:block></details>
@@ -68,6 +74,6 @@
   <dialog class="mk-course-guide-dialog" id="courseGuideDialog" aria-labelledby="courseGuideTitle"><div class="mk-course-guide-header"><div><small>PLEASE READ</small><h2 id="courseGuideTitle">영상강의 이용 및 환불 안내</h2></div><button type="button" data-close-course-guide aria-label="안내 닫기">×</button></div><div class="mk-course-guide-body"><th:block th:replace="~{front/fragments/course-policy :: policy}"></th:block></div><div class="mk-course-guide-footer"><button type="button" class="mk-primary-btn" data-close-course-guide>확인했습니다</button></div></dialog>
   <th:block th:replace="~{front/fragments/common :: footer}"></th:block>
 </div>
-<th:block th:replace="~{front/fragments/common :: script}"></th:block><script src="/front/js/lecture.js?v=20261013-1"></script>
+<th:block th:replace="~{front/fragments/common :: script}"></th:block><script src="/front/js/lecture.js?v=20261013-entry1"></script>
 </body>
 </html>

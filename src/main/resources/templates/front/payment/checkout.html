@@ -44,7 +44,7 @@
     <button type="button" id="samplePaymentComplete" class="mk-primary-btn w-100">결제완료</button><button type="button" class="mk-secondary-btn w-100 mt-2" data-payment-close>취소</button>
 </dialog>
 <th:block th:replace="~{front/fragments/common :: script}"></th:block>
-<link rel="stylesheet" th:href="@{/front/css/payment.css(v='20261013-1')}">
+<link rel="stylesheet" th:href="@{/front/css/payment.css(v='20261013-layout1')}">
 <script th:if="${paymentMode == 'TOSS'}" src="https://js.tosspayments.com/v2/standard"></script>
 <script th:src="@{/front/js/payment.js(v='20261013-1')}"></script>
 </body></html>

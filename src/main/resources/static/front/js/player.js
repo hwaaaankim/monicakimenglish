@@ -65,8 +65,20 @@
   var pendingEnded = false;
   var bookmarkBusy = false;
   var bookmarkDialog = document.getElementById("playerBookmarkDialog");
-  var requestedPosition = new URLSearchParams(window.location.search).get("t");
-  requestedPosition = requestedPosition !== null && Number.isFinite(Number(requestedPosition)) && Number(requestedPosition) >= 0 ? Number(requestedPosition) : null;
+  function historyPosition(value) {
+    if (value === null || value === undefined || String(value).trim() === "") return null;
+    var position = Number(value);
+    return Number.isFinite(position) && position >= 0 && position <= 2147483647 ? Math.floor(position) : null;
+  }
+  var requestedPosition = historyPosition(new URLSearchParams(window.location.search).get("t"));
+  window.addEventListener("pageshow", function (event) {
+    if (!event.persisted) return;
+    // A restored player must visit the description again instead of reusing its consumed entry.
+    var position = historyPosition(video.currentTime);
+    if (position === null) position = requestedPosition;
+    video.pause();
+    window.location.replace("/lectures/" + encodeURIComponent(lectureId) + (position === null ? "" : "?t=" + position));
+  });
   var playerSettings = loadPlayerSettings();
 
   applyPlayerSettings();
@@ -644,7 +656,17 @@
     }
 
     updateWatermarkText();
+    positionWatermark();
     moveWatermark();
+
+    window.addEventListener("resize", positionWatermark);
+    video.addEventListener("loadedmetadata", positionWatermark);
+    document.addEventListener("fullscreenchange", function () { requestAnimationFrame(positionWatermark); });
+    if (typeof ResizeObserver !== "undefined") {
+      var watermarkResizeObserver = new ResizeObserver(positionWatermark);
+      watermarkResizeObserver.observe(video);
+      window.addEventListener("pagehide", function () { watermarkResizeObserver.disconnect(); });
+    }
 
     watermarkTimer = window.setInterval(function () {
       updateWatermarkText();
@@ -676,23 +698,38 @@
       return;
     }
 
-    var positions = [
-      { left: "4%", top: "7%" },
-      { left: "62%", top: "10%" },
-      { left: "7%", top: "66%" },
-      { left: "58%", top: "68%" },
-      { left: "34%", top: "38%" }
-    ];
-
-    watermarkPositionIndex = (watermarkPositionIndex + 1) % positions.length;
+    watermarkPositionIndex = (watermarkPositionIndex + 1) % 5;
     watermark.classList.add("is-moving");
 
     window.setTimeout(function () {
-      var position = positions[watermarkPositionIndex];
-      watermark.style.left = position.left;
-      watermark.style.top = position.top;
+      positionWatermark();
       watermark.classList.remove("is-moving");
     }, 220);
+  }
+
+  function positionWatermark() {
+    if (!watermark || !video.clientWidth || !video.clientHeight) return;
+    // Use the displayed video picture, excluding the mobile controls below it
+    // and any object-fit letterboxing. Recompute after rotation/fullscreen.
+    var width = video.clientWidth;
+    var height = video.clientHeight;
+    var left = video.offsetLeft;
+    var top = video.offsetTop;
+    if (video.videoWidth > 0 && video.videoHeight > 0) {
+      var scale = Math.min(width / video.videoWidth, height / video.videoHeight);
+      var pictureWidth = video.videoWidth * scale;
+      var pictureHeight = video.videoHeight * scale;
+      left += (width - pictureWidth) / 2;
+      top += (height - pictureHeight) / 2;
+      width = pictureWidth;
+      height = pictureHeight;
+    }
+    var positions = [[.04, .07], [.62, .10], [.07, .66], [.58, .68], [.34, .38]];
+    var position = positions[watermarkPositionIndex];
+    var padding = Math.min(8, width / 10, height / 10);
+    watermark.style.maxWidth = Math.max(20, Math.min(width * .4, width - padding * 2)) + "px";
+    watermark.style.left = (left + clamp(width * position[0], padding, Math.max(padding, width - watermark.offsetWidth - padding))) + "px";
+    watermark.style.top = (top + clamp(height * position[1], padding, Math.max(padding, height - watermark.offsetHeight - padding))) + "px";
   }
 
   function safeLocalStorageGet(key) {
@@ -876,8 +913,9 @@
     if (bookmarkList) {
       bookmarkList.innerHTML = bookmarks.map(function (item) {
         return '<div class="mk-player-bookmark-row"><button type="button" class="mk-player-bookmark-seek" data-bookmark-seek="' + item.time + '">'
-          + (item.thumbnailUrl ? '<img class="mk-bookmark-mini-thumbnail" src="' + escapeHtml(item.thumbnailUrl) + '" alt="" loading="lazy">' : '')
-          + '<span class="mk-player-bookmark-time">' + escapeHtml(formatTime(item.time)) + '</span><span class="mk-player-bookmark-label">' + escapeHtml(item.label) + '</span></button>'
+          + '<span class="mk-bookmark-point-media"><span aria-hidden="true">▶</span>'
+          + (item.thumbnailUrl ? '<img class="mk-bookmark-mini-thumbnail" src="' + escapeHtml(item.thumbnailUrl) + '" alt="" loading="lazy">' : '') + '</span>'
+          + '<span class="mk-bookmark-point-copy"><span class="mk-player-bookmark-time">' + escapeHtml(formatTime(item.time)) + '</span><span class="mk-player-bookmark-label">' + escapeHtml(item.label) + '</span></span></button>'
           + '<button type="button" class="mk-player-bookmark-delete" data-bookmark-edit="' + escapeHtml(item.id) + '" aria-label="책갈피 이름 수정">✎</button>'
           + '<button type="button" class="mk-player-bookmark-delete" data-bookmark-delete="' + escapeHtml(item.id) + '" aria-label="책갈피 삭제">×</button></div>';
       }).join("");
